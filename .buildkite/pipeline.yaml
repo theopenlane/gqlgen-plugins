@@ -11,24 +11,20 @@ steps:
         key: "lint"
         plugins:
           - docker#v5.11.0:
-              image: "registry.hub.docker.com/golangci/golangci-lint:v1.60.3"
-              command: ["golangci-lint", "run", "-v", "--timeout", "10m", "--config", ".golangci.yaml", "--concurrency", "0"]
+              image: "registry.hub.docker.com/golangci/golangci-lint:latest-alpine"
+              command: ["golangci-lint", "run", "-v"]
+              always-pull: true
               environment:
                 - "GOTOOLCHAIN=auto"
       - label: ":golang: go test"
         key: "go_test"
-        retry:
-          automatic:
-            - exit_status: "*"
-              limit: 2
-        cancel_on_build_failing: true
         plugins:
           - docker#v5.11.0:
               image: golang:1.23.0
               command: ["go", "test", "-coverprofile=coverage.out", "./..."]
         artifact_paths: ["coverage.out"]
   - group: ":closed_lock_with_key: Security Checks"
-    depends_on: "go_test"
+    depends_on: "tests"
     key: "security"
     steps:
       - label: ":closed_lock_with_key: gosec"
