@@ -1,12 +1,12 @@
 # gqlgen-plugins
 
-[gqlgen](https://gqlgen.com/reference/plugins/) provides a way to hook into the gqlgen code generation lifecycle. This repo contains two hooks: 
+[gqlgen](https://gqlgen.com/reference/plugins/) provides a way to hook into the gqlgen code generation lifecycle. This repo contains two hooks:
 - bulkgen
 - resovlergen
 
 ## ResolverGen
 
-This hook will override the default generated resolver functions with the templates for CRUD operations. 
+This hook will override the default generated resolver functions with the templates for CRUD operations.
 
 ## BulkGen
 

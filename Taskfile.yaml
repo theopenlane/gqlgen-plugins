@@ -14,7 +14,7 @@ tasks:
   go:fmt:
     desc: format all go code
     cmds:
-      - go fmt ./... 
+      - go fmt ./...
 
   go:test:
     desc: runs and outputs results of created go tests
