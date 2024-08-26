@@ -24,7 +24,7 @@ steps:
         cancel_on_build_failing: true
         plugins:
           - docker#v5.11.0:
-              image: golang:1.22.6
+              image: golang:1.23.0
               command: ["go", "test", "-coverprofile=coverage.out", "./..."]
         artifact_paths: ["coverage.out"]
   - group: ":closed_lock_with_key: Security Checks"
