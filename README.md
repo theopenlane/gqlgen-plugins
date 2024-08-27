@@ -1,3 +1,8 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/theopenlane/gqlgen-plugins)](https://goreportcard.com/report/github.com/theopenlane/gqlgen-plugins)
+[![Build status](https://badge.buildkite.com/651bd9d2d92df64fcab6bab5db1842565d29c48ade77b52bd7.svg)](https://buildkite.com/theopenlane/gqlgen-plugins?branch=main)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=theopenlane_gqlgen-plugins&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=theopenlane_gqlgen-plugins)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache2.0-brightgreen.svg)](https://opensource.org/licenses/Apache-2.0)
+
 # gqlgen-plugins
 
 [gqlgen](https://gqlgen.com/reference/plugins/) provides a way to hook into the gqlgen code generation lifecycle. This repo contains two hooks:
