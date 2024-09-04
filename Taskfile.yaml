@@ -21,6 +21,19 @@ tasks:
     cmds:
       - go test -v ./...
 
+  go:test:cover:
+    desc: runs and outputs results of created go tests with coverage
+    aliases: [cover]
+    cmds:
+      - go test -v ./... -coverprofile=coverage.out
+
+  go:test:coverout:
+    desc: runs and outputs results of created go tests with coverage
+    aliases: [cover]
+    cmds:
+      - task: go:test:cover
+      - go tool cover -html=coverage.out
+
   go:tidy:
     desc: runs go mod tidy on the backend
     aliases: [tidy]
