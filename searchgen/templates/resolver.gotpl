@@ -8,6 +8,10 @@ func (r *queryResolver) Search(ctx context.Context, query string) (*SearchResult
 {{- else }}
 func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string) (*SearchResultConnection, error) {
 {{- end }}
+	if len(query) < 3 {
+		return nil, ErrSearchQueryTooShort
+	}
+
 	var (
 		errors []error
         {{- range $object := $.Objects }}
