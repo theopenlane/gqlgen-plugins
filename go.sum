@@ -88,8 +88,8 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
-github.com/theopenlane/entx v0.1.7-0.20240910190256-653c63a9a93a h1:zXR+c7lHYCkgZcNJ6TsIiz04fH0hZpHzp/bJptZgAD0=
-github.com/theopenlane/entx v0.1.7-0.20240910190256-653c63a9a93a/go.mod h1:h978z5xgldvaL/dIX7E2zQZ3rJ6cFDKnuVpi9wKRSGc=
+github.com/theopenlane/entx v0.1.7 h1:H1123YtVR2nFjqDY0SlJsjQrX8aDn5DEWFNuU/M8lNA=
+github.com/theopenlane/entx v0.1.7/go.mod h1:h978z5xgldvaL/dIX7E2zQZ3rJ6cFDKnuVpi9wKRSGc=
 github.com/theopenlane/utils v0.1.5 h1:4DRieQmsBF87n4lPjEkTt6s4iVRQaCGYlk2+C05lt3o=
 github.com/theopenlane/utils v0.1.5/go.mod h1:LWJzG9FfklsLlqWx/VdmfBMuNk700cWqHAwQL0299FM=
 github.com/tursodatabase/libsql-client-go v0.0.0-20240902231107-85af5b9d094d h1:dOMI4+zEbDI37KGb0TI44GUAwxHF9cMsIoDTJ7UmgfU=

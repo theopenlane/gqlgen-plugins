@@ -9,7 +9,7 @@ require (
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/stoewer/go-strcase v1.3.0
 	github.com/stretchr/testify v1.9.0
-	github.com/theopenlane/entx v0.1.7-0.20240910190256-653c63a9a93a
+	github.com/theopenlane/entx v0.1.7
 	github.com/vektah/gqlparser/v2 v2.5.16
 )
 
