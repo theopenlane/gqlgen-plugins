@@ -27,12 +27,21 @@ type searchResult[T any] struct {
 func search{{ $object.Name | toPlural }}(ctx context.Context, query string) ([]*generated.{{ $object.Name }}, error) {
 	return withTransactionalMutation(ctx).{{ $object.Name  }}.Query().Where(
 		{{ $object.Name  | toLower }}.Or(
-			{{- range $field := $object.Fields }}
+			{{- range $i, $field := $object.Fields }}
 			    {{- if eq $field.Type "json.RawMessage" }}
 				func(s *sql.Selector) {
+				{{- if ne $field.Path "" }}
 				s.Where(
-					sqljson.ValueContains({{ $object.Name | toLower }}.Field{{ $field.Name }}, query), // search by {{ $field.Name }}
+					sqljson.StringContains({{ $object.Name | toLower }}.Field{{ $field.Name }}, query,sqljson.Path("{{ $field.Path }}")), // search by {{ $field.Name }} at {{ $field.Path }}
 				)
+				{{- else if ne $field.DotPath "" }}
+				s.Where(
+					sqljson.StringContains({{ $object.Name | toLower }}.Field{{ $field.Name }}, query,sqljson.DotPath("{{ $field.DotPath }}")), // search by {{ $field.Name }} at {{ $field.DotPath }}
+				)
+				{{- else }}
+					likeQuery := "%" + query + "%"
+					s.Where(sql.ExprP("({{ $field.Name | toLower }})::text LIKE ${{ add $i 1 }}", likeQuery)) // search by {{ $field.Name }}
+				{{- end }}
 				},
 				{{- else }}
 				{{ $object.Name | toLower }}.{{ $field.Name }}ContainsFold(query), // search by {{ $field.Name }}
@@ -46,12 +55,21 @@ func search{{ $object.Name | toPlural }}(ctx context.Context, query string) ([]*
 func adminSearch{{ $object.Name | toPlural }}(ctx context.Context, query string) ([]*generated.{{ $object.Name }}, error) {
 	return withTransactionalMutation(ctx).{{ $object.Name  }}.Query().Where(
 		{{ $object.Name  | toLower }}.Or(
-			{{- range $field := $object.AdminFields }}
-			    {{- if eq $field.Type "json.RawMessage" }}
+			{{- range $i, $field := $object.AdminFields }}
+  				{{- if eq $field.Type "json.RawMessage" }}
 				func(s *sql.Selector) {
+				{{- if ne $field.Path "" }}
 				s.Where(
-					sqljson.ValueContains({{ $object.Name | toLower }}.Field{{ $field.Name }}, query), // search by {{ $field.Name }}
+					sqljson.StringContains({{ $object.Name | toLower }}.Field{{ $field.Name }}, query,sqljson.Path("{{ $field.Path }}")), // search by {{ $field.Name }} at {{ $field.Path }}
 				)
+				{{- else if ne $field.DotPath "" }}
+				s.Where(
+					sqljson.StringContains({{ $object.Name | toLower }}.Field{{ $field.Name }}, query,sqljson.DotPath("{{ $field.DotPath }}")), // search by {{ $field.Name }} at {{ $field.DotPath }}
+				)
+				{{- else }}
+					likeQuery := "%" + query + "%"
+					s.Where(sql.ExprP("({{ $field.Name | toLower }})::text LIKE ${{ add $i 1 }}", likeQuery)) // search by {{ $field.Name }}
+				{{- end }}
 				},
 				{{- else }}
 				{{ $object.Name | toLower }}.{{ $field.Name }}ContainsFold(query), // search by {{ $field.Name }}
