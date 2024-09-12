@@ -1,10 +1,8 @@
 {{ reserveImport "context"  }}
 {{ reserveImport "errors"  }}
 
-{{ reserveImport "github.com/rs/zerolog/log" }}
-
-{{reserveImport "github.com/theopenlane/core/internal/ent/generated" }}
-{{reserveImport "github.com/theopenlane/core/internal/ent/generated/privacy"}}
+{{ reserveImport "github.com/theopenlane/core/internal/ent/generated" }}
+{{ reserveImport "github.com/theopenlane/core/internal/ent/generated/privacy"}}
 
 {{ $root := . }}
 
