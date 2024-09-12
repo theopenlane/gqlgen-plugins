@@ -33,7 +33,7 @@ func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string) (*
 
 	// Check all errors and return a single error if any of the searches failed
 	if len(errors) > 0 {
-		r.logger.Errorw("search failed", "errors", errors)
+		r.logger.Error().Errs("errors", errors).Msg(search failed")
 
 		return nil, ErrSearchFailed
 	}
