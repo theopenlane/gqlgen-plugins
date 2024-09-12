@@ -1,6 +1,8 @@
 {{ reserveImport "context"  }}
 {{ reserveImport "errors"  }}
 
+{{ reserveImport "github.com/rs/zerolog/log" }}
+
 {{reserveImport "github.com/theopenlane/core/internal/ent/generated" }}
 {{reserveImport "github.com/theopenlane/core/internal/ent/generated/privacy"}}
 
@@ -18,7 +20,7 @@ func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, in
 
 	res, err := c.{{ $object.Name }}.CreateBulk(builders...).Save(ctx)
 	if err != nil {
-		return nil, parseRequestError(err, action{action: ActionCreate, object: "{{ $object.Name | toLower }}"}, r.logger)
+		return nil, parseRequestError(err, action{action: ActionCreate, object: "{{ $object.Name | toLower }}"})
 	}
 
 	// return response

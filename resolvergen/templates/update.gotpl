@@ -3,13 +3,13 @@
 
 res, err := withTransactionalMutation(ctx).{{ $entity }}.Get(ctx, id)
 if err != nil {
-	return nil, parseRequestError(err, action{action: ActionUpdate, object: "{{ $entity | toLower }}"}, r.logger)
+	return nil, parseRequestError(err, action{action: ActionUpdate, object: "{{ $entity | toLower }}"})
 }
 
 {{- if $isOrgOwned }}
 // set the organization in the auth context if its not done for us
 if err := setOrganizationInAuthContext(ctx, &res.OwnerID); err != nil {
-	r.logger.Error().Err(err).Msg("failed to set organization in auth context")
+	log.Error().Err(err).Msg("failed to set organization in auth context")
 
 	return nil, ErrPermissionDenied
 }
@@ -20,7 +20,7 @@ req := res.Update().SetInput(input){{- range $appendField := .AppendFields }}.{{
 
 res, err = req.Save(ctx)
 if err != nil {
-	return nil, parseRequestError(err, action{action: ActionUpdate, object: "{{ $entity | toLower }}"}, r.logger)
+	return nil, parseRequestError(err, action{action: ActionUpdate, object: "{{ $entity | toLower }}"})
 }
 
 return &{{ $entity }}UpdatePayload{
