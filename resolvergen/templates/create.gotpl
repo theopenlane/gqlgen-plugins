@@ -1,4 +1,5 @@
 {{ reserveImport "github.com/theopenlane/utils/rout" }}
+{{ reserveImport "github.com/rs/zerolog/log" }}
 
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 {{ $isOrgOwned := .Field | hasOwnerField  -}}

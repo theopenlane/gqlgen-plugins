@@ -1,3 +1,5 @@
+{{ reserveImport "github.com/rs/zerolog/log" }}
+
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 
 data, err := unmarshalBulkData[generated.Create{{ $entity }}Input](input)
