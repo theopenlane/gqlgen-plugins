@@ -1,7 +1,7 @@
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 
 if err := withTransactionalMutation(ctx).{{ $entity }}.DeleteOneID(id).Exec(ctx); err != nil {
-	return nil, parseRequestError(err, action{action: ActionDelete, object: "{{ $entity | toLower }}"}, r.logger)
+	return nil, parseRequestError(err, action{action: ActionDelete, object: "{{ $entity | toLower }}"})
 }
 
 if err := generated.{{ $entity }}EdgeCleanup(ctx, id); err != nil {
