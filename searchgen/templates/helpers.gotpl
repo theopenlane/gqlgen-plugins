@@ -1,13 +1,13 @@
 {{reserveImport "context" }}
 {{reserveImport "time" }}
 
-{{reserveImport "github.com/theopenlane/core/internal/ent/generated" }}
+{{reserveImport $.EntPackageName }}
 {{reserveImport "entgo.io/ent/dialect/sql"}}
 {{reserveImport "entgo.io/ent/dialect/sql/sqljson"}}
 
 import (
 {{- range $object := $.Objects }}
-    "github.com/theopenlane/core/internal/ent/generated/{{ $object.Name | toLower }}"
+    "{{ $.EntPackageName }}/{{ $object.Name | toLower }}"
 {{- end }}
 )
 
