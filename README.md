@@ -26,10 +26,10 @@ csv file upload input.
 Creates search resolvers to search on fields within the ent schema. You must
 pass in the package import name of the `generated` ent code, e.g.
 `github.com/theopenlane/core/internal/ent/generated`. If the package is not
-named `generated`, you'll need to define it with the name override:
+named `generated` it is added as an alias.
 
 ```go
-api.AddPlugin(searchgen.New("generated github.com/theopenlane/core/internal/ent/generated")), // add the search plugin
+api.AddPlugin(searchgen.New("github.com/theopenlane/core/internal/ent/generated")), // add the search plugin
 ```
 
 ## Usage

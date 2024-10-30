@@ -2,7 +2,7 @@
 
 {{ reserveImport "github.com/rs/zerolog/log" }}
 
-{{ reserveImport $.EntPackageName }}
+{{ reserveImport $.EntPackageName "generated"}}
 
 // Search is the resolver for the search field.
 {{- if eq $.Name "Global" }}
