@@ -30,7 +30,9 @@ var helperTemplate string
 var resolverTemplate string
 
 // SearchPlugin is a gqlgen plugin to generate search functions
-type SearchPlugin struct{}
+type SearchPlugin struct {
+	EntGeneratedPackage string
+}
 
 // Name returns the name of the plugin
 // This name must match the upstream resolvergen to replace during code generation
@@ -39,8 +41,10 @@ func (r SearchPlugin) Name() string {
 }
 
 // NewSearchPlugin returns a new search plugin
-func New() *SearchPlugin {
-	return &SearchPlugin{}
+func New(entPackage string) *SearchPlugin {
+	return &SearchPlugin{
+		EntGeneratedPackage: entPackage,
+	}
 }
 
 // SearchResolverBuild is a struct to hold the objects for the bulk resolver
@@ -49,6 +53,8 @@ type SearchResolverBuild struct {
 	Name string
 	// Objects is a list of objects to generate bulk resolvers for
 	Objects []Object
+	// EntPackageName is the ent generated package that holds the generated types
+	EntPackageName string
 }
 
 // Object is a struct to hold the object name for the bulk resolver
@@ -67,6 +73,9 @@ func (r SearchPlugin) GenerateCode(data *codegen.Data) error {
 	if err != nil {
 		return err
 	}
+
+	// add the generated package name
+	inputData.EntPackageName = r.EntGeneratedPackage
 
 	// generate the search helper
 	if err := genSearchHelper(data, inputData); err != nil {
