@@ -1,3 +1,4 @@
+{{ reserveImport "github.com/theopenlane/utils/rout" }}
 {{ reserveImport "github.com/rs/zerolog/log" }}
 
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
@@ -13,7 +14,7 @@ if err != nil {
 if err := setOrganizationInAuthContext(ctx, &res.OwnerID); err != nil {
 	log.Error().Err(err).Msg("failed to set organization in auth context")
 
-	return nil, ErrPermissionDenied
+	return nil, rout.ErrPermissionDenied
 }
 {{- end }}
 
