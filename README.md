@@ -6,10 +6,12 @@
 # gqlgen-plugins
 
 [gqlgen](https://gqlgen.com/reference/plugins/) provides a way to hook into the
-gqlgen code generation lifecycle. This repo contains two hooks:
+gqlgen code generation lifecycle. This repo contains several hooks that can be
+used:
 
 - bulkgen
 - resovlergen
+- searchgen
 
 ## ResolverGen
 
