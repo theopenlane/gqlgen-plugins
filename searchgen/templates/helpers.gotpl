@@ -1,7 +1,7 @@
 {{reserveImport "context" }}
 {{reserveImport "time" }}
 
-{{reserveImport $.EntPackageName }}
+{{reserveImport $.EntPackageName "generated"}}
 {{reserveImport "entgo.io/ent/dialect/sql"}}
 {{reserveImport "entgo.io/ent/dialect/sql/sqljson"}}
 
