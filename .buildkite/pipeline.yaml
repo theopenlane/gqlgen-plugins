@@ -10,7 +10,7 @@ steps:
         key: "lint"
         cancel_on_build_failing: true
         plugins:
-          - docker#v5.11.0:
+          - docker#v5.12.0:
               image: "ghcr.io/theopenlane/build-image:latest"
               always-pull: true
               command: ["task", "go:lint"]
@@ -20,7 +20,7 @@ steps:
         key: "go_test"
         cancel_on_build_failing: true
         plugins:
-          - docker#v5.11.0:
+          - docker#v5.12.0:
               image: "ghcr.io/theopenlane/build-image:latest"
               always-pull: true
               command: ["task", "go:test:cover"]
@@ -34,7 +34,7 @@ steps:
       - label: ":closed_lock_with_key: gosec"
         key: "gosec"
         plugins:
-          - docker#v5.11.0:
+          - docker#v5.12.0:
               image: "registry.hub.docker.com/securego/gosec:2.20.0"
               command: ["-no-fail", "-exclude-generated", "-fmt sonarqube", "-out", "results.txt", "./..."]
               always-pull: true
@@ -51,7 +51,7 @@ steps:
           - artifacts#v1.9.4:
               download: "coverage.out"
               step: "go_test"
-          - docker#v5.11.0:
+          - docker#v5.12.0:
               image: "sonarsource/sonar-scanner-cli:11"
               environment:
                 - "SONAR_TOKEN"
@@ -67,7 +67,7 @@ steps:
           - artifacts#v1.9.4:
               download: coverage.out
               step: "go_test"
-          - docker#v5.11.0:
+          - docker#v5.12.0:
               image: "sonarsource/sonar-scanner-cli:11"
               environment:
                 - "SONAR_TOKEN"
