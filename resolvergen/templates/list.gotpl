@@ -6,7 +6,7 @@
 {{ $hasOrderBy := hasArgument "orderBy" .Field.FieldDefinition.Arguments }}
 {{ $hasWhere := hasArgument "where" .Field.FieldDefinition.Arguments }}
 
-return withTransactionalMutation(ctx).{{ $entity }}.Query().Paginate(
+res, err :=  withTransactionalMutation(ctx).{{ $entity }}.Query().Paginate(
 	ctx,
 	{{- if $hasAfter }}
 	after,
@@ -27,3 +27,8 @@ return withTransactionalMutation(ctx).{{ $entity }}.Query().Paginate(
 	generated.With{{ $entity }}Filter(where.Filter),
 	{{- end -}}
 )
+if err != nil {
+	return nil, parseRequestError(err, action{action: ActionGet, object: "{{ $entity | toLower }}"})
+}
+
+return res, err
