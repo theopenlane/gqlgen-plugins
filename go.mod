@@ -1,6 +1,6 @@
 module github.com/theopenlane/gqlgen-plugins
 
-go 1.23.1
+go 1.23.3
 
 require (
 	entgo.io/contrib v0.6.0
