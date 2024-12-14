@@ -3,6 +3,7 @@
 
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 {{ $isOrgOwned := .Field | hasOwnerField  -}}
+{{ $modelPackage := .ModelPackage | modelPackage -}}
 
 res, err := withTransactionalMutation(ctx).{{ $entity }}.Get(ctx, id)
 if err != nil {
@@ -26,6 +27,6 @@ if err != nil {
 	return nil, parseRequestError(err, action{action: ActionUpdate, object: "{{ $entity | toLower }}"})
 }
 
-return &{{ $entity }}UpdatePayload{
+return &{{ $modelPackage }}{{ $entity }}UpdatePayload{
 	{{ $entity }}: res,
 	}, nil

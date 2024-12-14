@@ -19,8 +19,41 @@ func New() plugin.Plugin {
 	return &Plugin{}
 }
 
+// Options is a function to set the options for the plugin
+type Options func(*Plugin)
+
+// NewWithOptions returns a new plugin with the given options
+func NewWithOptions(opts ...Options) *Plugin {
+	r := &Plugin{}
+
+	for _, opt := range opts {
+		opt(r)
+	}
+
+	return r
+}
+
+// WithModelPackage sets the model package for the gqlgen model
+func WithModelPackage(modelPackage string) Options {
+	return func(p *Plugin) {
+		p.ModelPackage = modelPackage
+	}
+}
+
+// WithEntGeneratedPackage sets the ent generated package for the gqlgen model
+func WithEntGeneratedPackage(entPackage string) Options {
+	return func(p *Plugin) {
+		p.EntGeneratedPackage = entPackage
+	}
+}
+
 // Plugin is a gqlgen plugin to generate bulk resolver functions used for mutations
-type Plugin struct{}
+type Plugin struct {
+	// ModelPackage is the package name for the gqlgen model
+	ModelPackage string
+	// EntGeneratedPackage is the ent generated package that holds the generated types
+	EntGeneratedPackage string
+}
 
 // Name returns the name of the plugin
 func (m *Plugin) Name() string {
@@ -31,6 +64,12 @@ func (m *Plugin) Name() string {
 type BulkResolverBuild struct {
 	// Objects is a list of objects to generate bulk resolvers for
 	Objects []Object
+	// ModelImport is the import path for the gqlgen model
+	ModelImport string
+	// EntImport is the ent generated package that holds the generated types
+	EntImport string
+	// ModelPackage is the package name for the gqlgen model
+	ModelPackage string
 }
 
 // Object is a struct to hold the object name for the bulk resolver
@@ -54,7 +93,19 @@ func (m *Plugin) GenerateCode(data *codegen.Data) error {
 // used by the resolvergen plugin for each bulk resolver
 func (m *Plugin) generateSingleFile(data codegen.Data) error {
 	inputData := BulkResolverBuild{
-		Objects: []Object{},
+		Objects:     []Object{},
+		ModelImport: m.ModelPackage,
+		EntImport:   m.EntGeneratedPackage,
+	}
+
+	// only add the model package if te import is not empty
+	if m.ModelPackage != "" {
+		modelPkg := data.Config.Model.Package
+		if modelPkg != "" {
+			modelPkg += "."
+		}
+
+		inputData.ModelPackage = modelPkg
 	}
 
 	for _, f := range data.Schema.Mutation.Fields {

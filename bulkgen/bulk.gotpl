@@ -1,15 +1,20 @@
 {{ reserveImport "context"  }}
 {{ reserveImport "errors"  }}
 
-{{ reserveImport "github.com/theopenlane/core/internal/ent/generated" }}
-{{ reserveImport "github.com/theopenlane/core/internal/ent/generated/privacy"}}
+{{- if $.EntImport }}
+{{ reserveImport $.EntImport }}
+{{- end }}
+
+{{- if $.ModelImport }}
+{{ reserveImport $.ModelImport }}
+{{- end }}
 
 {{ $root := . }}
 
 {{ range $object := .Objects }}
 
 // bulkCreate{{ $object.Name }} uses the CreateBulk function to create multiple {{ $object.Name }} entities
-func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, input []*generated.Create{{ $object.Name }}Input) (*{{ $object.Name }}BulkCreatePayload, error) {
+func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, input []*generated.Create{{ $object.Name }}Input) (*{{ $root.ModelPackage }}{{ $object.Name }}BulkCreatePayload, error) {
     c := withTransactionalMutation(ctx)
 	builders := make([]*generated.{{ $object.Name }}Create, len(input))
 	for i, data := range input {
@@ -22,7 +27,7 @@ func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, in
 	}
 
 	// return response
-	return &{{ $object.Name }}BulkCreatePayload{
+	return &{{ $root.ModelPackage }}{{ $object.Name }}BulkCreatePayload{
 		{{ $object.PluralName }}: res,
 	}, nil
 }

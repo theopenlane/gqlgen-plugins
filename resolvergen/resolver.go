@@ -20,6 +20,8 @@ const (
 // ResolverPlugin is a gqlgen plugin to generate resolver functions
 type ResolverPlugin struct {
 	*resolvergen.Plugin
+
+	modelPackage string
 }
 
 // Name returns the name of the plugin
@@ -34,7 +36,7 @@ func New() *ResolverPlugin {
 }
 
 // Implement gqlgen api.ResolverImplementer
-func (r ResolverPlugin) Implement(s string, f *codegen.Field) (val string) {
+func (r *ResolverPlugin) Implement(s string, f *codegen.Field) (val string) {
 	// if the field has a custom resolver, use it
 	// panic is not a custom resolver so attempt to implement the field
 	if s != "" && !strings.Contains(s, "panic") {
@@ -43,16 +45,21 @@ func (r ResolverPlugin) Implement(s string, f *codegen.Field) (val string) {
 
 	switch {
 	case isMutation(f):
-		return mutationImplementer(f)
+		return mutationImplementer(f, r.modelPackage)
 	case isQuery(f):
-		return queryImplementer(f)
+		return queryImplementer(f, r.modelPackage)
 	default:
 		return fmt.Sprintf(defaultImplementation, f.GoFieldName, f.Name)
 	}
 }
 
 // GenerateCode implements api.CodeGenerator
-func (r ResolverPlugin) GenerateCode(data *codegen.Data) error {
+func (r *ResolverPlugin) GenerateCode(data *codegen.Data) error {
+	// set the model package if it is different from the resolver package
+	if data.Config.Resolver.Package != data.Config.Model.Package {
+		r.modelPackage = data.Config.Model.Package
+	}
+
 	// use the default resolver plugin to generate the code
 	return r.Plugin.GenerateCode(data)
 }
@@ -68,30 +75,30 @@ func isQuery(f *codegen.Field) bool {
 }
 
 // mutationImplementer returns the implementation for the mutation
-func mutationImplementer(f *codegen.Field) string {
+func mutationImplementer(f *codegen.Field, modelPackage string) string {
 	switch crudType(f) {
 	case "BulkCSV":
-		return renderBulkUpload(f)
+		return renderBulkUpload(f, modelPackage)
 	case "Bulk":
-		return renderBulk(f)
+		return renderBulk(f, modelPackage)
 	case "Create":
-		return renderCreate(f)
+		return renderCreate(f, modelPackage)
 	case "Update":
-		return renderUpdate(f)
+		return renderUpdate(f, modelPackage)
 	case "Delete":
-		return renderDelete(f)
+		return renderDelete(f, modelPackage)
 	default:
 		return fmt.Sprintf(defaultImplementation, f.GoFieldName, f.Name)
 	}
 }
 
 // queryImplementer returns the implementation for the query
-func queryImplementer(f *codegen.Field) string {
+func queryImplementer(f *codegen.Field, modelPackage string) string {
 	if strings.Contains(f.TypeReference.Definition.Name, "Connection") {
-		return renderList(f)
+		return renderList(f, modelPackage)
 	}
 
-	return renderQuery(f)
+	return renderQuery(f, modelPackage)
 }
 
 // crudType returns the type of CRUD operation

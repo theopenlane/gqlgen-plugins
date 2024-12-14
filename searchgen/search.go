@@ -32,6 +32,7 @@ var resolverTemplate string
 // SearchPlugin is a gqlgen plugin to generate search functions
 type SearchPlugin struct {
 	EntGeneratedPackage string
+	ModelPackage        string
 }
 
 // Name returns the name of the plugin
@@ -47,14 +48,46 @@ func New(entPackage string) *SearchPlugin {
 	}
 }
 
+// Options is a function to set the options for the plugin
+type Options func(*SearchPlugin)
+
+// NewWithOptions returns a new search plugin with the given options
+func NewWithOptions(opts ...Options) *SearchPlugin {
+	r := &SearchPlugin{}
+
+	for _, opt := range opts {
+		opt(r)
+	}
+
+	return r
+}
+
+// WithModelPackage sets the model package for the gqlgen model
+func WithModelPackage(modelPackage string) Options {
+	return func(p *SearchPlugin) {
+		p.ModelPackage = modelPackage
+	}
+}
+
+// WithEntGeneratedPackage sets the ent generated package for the gqlgen model
+func WithEntGeneratedPackage(entPackage string) Options {
+	return func(p *SearchPlugin) {
+		p.EntGeneratedPackage = entPackage
+	}
+}
+
 // SearchResolverBuild is a struct to hold the objects for the bulk resolver
 type SearchResolverBuild struct {
 	// Name of the search type
 	Name string
 	// Objects is a list of objects to generate bulk resolvers for
 	Objects []Object
-	// EntPackageName is the ent generated package that holds the generated types
-	EntPackageName string
+	// EntImport is the ent generated package that holds the generated types
+	EntImport string
+	// ModelImport is the package name for the gqlgen model
+	ModelImport string
+	// ModelPackage is the package name for the gqlgen model
+	ModelPackage string
 }
 
 // Object is a struct to hold the object name for the bulk resolver
@@ -74,8 +107,20 @@ func (r SearchPlugin) GenerateCode(data *codegen.Data) error {
 		return err
 	}
 
+	inputData.ModelImport = r.ModelPackage
+
+	// only add the model package if the import is not empty
+	if r.ModelPackage != "" {
+		modelPkg := data.Config.Model.Package
+		if modelPkg != "" {
+			modelPkg += "."
+		}
+
+		inputData.ModelPackage = modelPkg
+	}
+
 	// add the generated package name
-	inputData.EntPackageName = r.EntGeneratedPackage
+	inputData.EntImport = r.EntGeneratedPackage
 
 	// generate the search helper
 	if err := genSearchHelper(data, inputData); err != nil {
