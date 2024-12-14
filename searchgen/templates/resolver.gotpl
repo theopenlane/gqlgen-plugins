@@ -2,13 +2,21 @@
 
 {{ reserveImport "github.com/rs/zerolog/log" }}
 
-{{ reserveImport $.EntPackageName "generated"}}
+{{- if $.EntImport }}
+{{ reserveImport $.EntImport }}
+{{- end }}
+
+{{- if $.ModelImport }}
+{{ reserveImport $.ModelImport }}
+{{- end }}
+
+{{ $root := . }}
 
 // Search is the resolver for the search field.
 {{- if eq $.Name "Global" }}
-func (r *queryResolver) Search(ctx context.Context, query string) (*SearchResultConnection, error) {
+func (r *queryResolver) Search(ctx context.Context, query string) (*{{ .ModelPackage }}SearchResultConnection, error) {
 {{- else }}
-func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string) (*SearchResultConnection, error) {
+func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string) (*{{ .ModelPackage }}SearchResultConnection, error) {
 {{- end }}
 	if len(query) < 3 {
 		return nil, ErrSearchQueryTooShort
@@ -41,10 +49,10 @@ func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string) (*
 	}
 
 	// return the results
-	return &SearchResultConnection{
-		Nodes: []SearchResult{
+	return &{{$root.ModelPackage}}SearchResultConnection{
+		Nodes: []{{$root.ModelPackage}}SearchResult{
             {{- range $object := $.Objects }}
-			{{ $object.Name }}SearchResult{
+			{{$root.ModelPackage}}{{ $object.Name }}SearchResult{
 				{{ $object.Name | toPlural }}: {{ $object.Name | toLower }}Results,
 			},
             {{- end }}
@@ -55,10 +63,10 @@ func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string) (*
 {{- range $object := $.Objects }}
 
 {{- if eq $.Name "Global" }}
-func (r *queryResolver) {{ $object.Name }}Search(ctx context.Context, query string) (*{{ $object.Name }}SearchResult, error) {
+func (r *queryResolver) {{ $object.Name }}Search(ctx context.Context, query string) (*{{$root.ModelPackage}}{{ $object.Name }}SearchResult, error) {
 	{{ $object.Name | toLower }}Results, err := search{{ $object.Name | toPlural }}(ctx, query)
 {{- else }}
-func (r *queryResolver) Admin{{ $object.Name }}Search(ctx context.Context, query string) (*{{ $object.Name }}SearchResult, error) {
+func (r *queryResolver) Admin{{ $object.Name }}Search(ctx context.Context, query string) (*{{$root.ModelPackage}}{{ $object.Name }}SearchResult, error) {
 		{{ $object.Name | toLower }}Results, err := adminSearch{{ $object.Name | toPlural }}(ctx, query)
 {{- end}}
 
@@ -67,7 +75,7 @@ func (r *queryResolver) Admin{{ $object.Name }}Search(ctx context.Context, query
 	}
 
 	// return the results
-	return &{{ $object.Name }}SearchResult{
+	return &{{$root.ModelPackage}}{{ $object.Name }}SearchResult{
 		{{ $object.Name | toPlural }}: {{ $object.Name | toLower }}Results,
 	}, nil
 }

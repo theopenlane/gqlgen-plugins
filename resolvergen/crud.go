@@ -21,6 +21,7 @@ var templates embed.FS
 type crudResolver struct {
 	Field        *codegen.Field
 	AppendFields []string
+	ModelPackage string
 }
 
 // renderTemplate renders the template with the given name
@@ -32,6 +33,7 @@ func renderTemplate(templateName string, input *crudResolver) string {
 		"hasArgument":   hasArgument,
 		"hasOwnerField": hasOwnerField,
 		"reserveImport": gqltemplates.CurrentImports.Reserve,
+		"modelPackage":  modelPackage,
 	}).ParseFS(templates, "templates/"+templateName)
 	if err != nil {
 		panic(err)
@@ -46,55 +48,69 @@ func renderTemplate(templateName string, input *crudResolver) string {
 	return strings.Trim(code.String(), "\t \n")
 }
 
+func modelPackage(modelPackage string) string {
+	if modelPackage == "" {
+		return ""
+	}
+
+	return modelPackage + "."
+}
+
 // renderCreate renders the create template
-func renderCreate(field *codegen.Field) string {
+func renderCreate(field *codegen.Field, modelPackage string) string {
 	return renderTemplate("create.gotpl", &crudResolver{
-		Field: field,
+		Field:        field,
+		ModelPackage: modelPackage,
 	})
 }
 
 // renderUpdate renders the update template
-func renderUpdate(field *codegen.Field) string {
+func renderUpdate(field *codegen.Field, modelPackage string) string {
 	appendFields := getAppendFields(field)
 
 	cr := &crudResolver{
 		Field:        field,
 		AppendFields: appendFields,
+		ModelPackage: modelPackage,
 	}
 
 	return renderTemplate("update.gotpl", cr)
 }
 
 // renderDelete renders the delete template
-func renderDelete(field *codegen.Field) string {
+func renderDelete(field *codegen.Field, modelPackage string) string {
 	return renderTemplate("delete.gotpl", &crudResolver{
-		Field: field,
+		Field:        field,
+		ModelPackage: modelPackage,
 	})
 }
 
 // renderBulkUpload renders the bulk upload template
-func renderBulkUpload(field *codegen.Field) string {
+func renderBulkUpload(field *codegen.Field, modelPackage string) string {
 	return renderTemplate("upload.gotpl", &crudResolver{
-		Field: field,
+		Field:        field,
+		ModelPackage: modelPackage,
 	})
 }
 
 // renderBulk renders the bulk template
-func renderBulk(field *codegen.Field) string {
+func renderBulk(field *codegen.Field, modelPackage string) string {
 	return renderTemplate("bulk.gotpl", &crudResolver{
-		Field: field,
+		Field:        field,
+		ModelPackage: modelPackage,
 	})
 }
 
 // renderQuery renders the query template
-func renderQuery(field *codegen.Field) string {
+func renderQuery(field *codegen.Field, modelPackage string) string {
 	return renderTemplate("get.gotpl", &crudResolver{
-		Field: field,
+		Field:        field,
+		ModelPackage: modelPackage,
 	})
 }
 
 // renderList renders the list template
-func renderList(field *codegen.Field) string {
+func renderList(field *codegen.Field, modelPackage string) string {
 	return renderTemplate("list.gotpl", &crudResolver{
 		Field: field,
 	})

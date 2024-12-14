@@ -3,6 +3,7 @@
 
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 {{ $isOrgOwned := .Field | hasOwnerField  -}}
+{{ $modelPackage := .ModelPackage | modelPackage -}}
 
 {{- if $isOrgOwned }}
 // set the organization in the auth context if its not done for us
@@ -18,6 +19,6 @@ if err != nil {
 	return nil, parseRequestError(err, action{action: ActionCreate, object: "{{ $entity | toLower }}"})
 }
 
-return &{{ $entity }}CreatePayload{
+return &{{ $modelPackage }}{{ $entity }}CreatePayload{
 	{{ $entity }}: res,
 }, nil

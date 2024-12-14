@@ -1,13 +1,13 @@
 {{reserveImport "context" }}
 {{reserveImport "time" }}
 
-{{reserveImport $.EntPackageName "generated"}}
+{{reserveImport $.EntImport "generated"}}
 {{reserveImport "entgo.io/ent/dialect/sql"}}
 {{reserveImport "entgo.io/ent/dialect/sql/sqljson"}}
 
 import (
 {{- range $object := $.Objects }}
-    "{{ $.EntPackageName }}/{{ $object.Name | toLower }}"
+    "{{ $.EntImport }}/{{ $object.Name | toLower }}"
 {{- end }}
 )
 
