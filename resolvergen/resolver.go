@@ -55,8 +55,11 @@ func (r *ResolverPlugin) Implement(s string, f *codegen.Field) (val string) {
 
 // GenerateCode implements api.CodeGenerator
 func (r *ResolverPlugin) GenerateCode(data *codegen.Data) error {
-	// set the model package for the resolver
-	r.modelPackage = data.Config.Model.Package
+	// set the model package if it is different from the resolver package
+	if data.Config.Resolver.Package != data.Config.Model.Package {
+		r.modelPackage = data.Config.Model.Package
+	}
+
 	// use the default resolver plugin to generate the code
 	return r.Plugin.GenerateCode(data)
 }

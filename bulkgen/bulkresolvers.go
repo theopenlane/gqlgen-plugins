@@ -92,16 +92,20 @@ func (m *Plugin) GenerateCode(data *codegen.Data) error {
 // generateSingleFile generates the bulk resolver code, this is all done in a single file and
 // used by the resolvergen plugin for each bulk resolver
 func (m *Plugin) generateSingleFile(data codegen.Data) error {
-	modelPkg := data.Config.Model.Package
-	if modelPkg != "" {
-		modelPkg += "."
+	inputData := BulkResolverBuild{
+		Objects:     []Object{},
+		ModelImport: m.ModelPackage,
+		EntImport:   m.EntGeneratedPackage,
 	}
 
-	inputData := BulkResolverBuild{
-		Objects:      []Object{},
-		ModelImport:  m.ModelPackage,
-		EntImport:    m.EntGeneratedPackage,
-		ModelPackage: modelPkg,
+	// only add the model package if te import is not empty
+	if m.ModelPackage != "" {
+		modelPkg := data.Config.Model.Package
+		if modelPkg != "" {
+			modelPkg += "."
+		}
+
+		inputData.ModelPackage = modelPkg
 	}
 
 	for _, f := range data.Schema.Mutation.Fields {

@@ -107,17 +107,20 @@ func (r SearchPlugin) GenerateCode(data *codegen.Data) error {
 		return err
 	}
 
-	modelPkg := data.Config.Model.Package
-	if modelPkg != "" {
-		modelPkg += "."
-	}
+	inputData.ModelImport = r.ModelPackage
 
-	inputData.ModelPackage = modelPkg
+	// only add the model package if the import is not empty
+	if r.ModelPackage != "" {
+		modelPkg := data.Config.Model.Package
+		if modelPkg != "" {
+			modelPkg += "."
+		}
+
+		inputData.ModelPackage = modelPkg
+	}
 
 	// add the generated package name
 	inputData.EntImport = r.EntGeneratedPackage
-
-	inputData.ModelImport = r.ModelPackage
 
 	// generate the search helper
 	if err := genSearchHelper(data, inputData); err != nil {
