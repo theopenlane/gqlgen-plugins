@@ -49,14 +49,22 @@ func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string) (*
 	}
 
 	// return the results
-	return &{{$root.ModelPackage}}SearchResultConnection{
-		Nodes: []{{$root.ModelPackage}}SearchResult{
-            {{- range $object := $.Objects }}
-			{{$root.ModelPackage}}{{ $object.Name }}SearchResult{
-				{{ $object.Name | toPlural }}: {{ $object.Name | toLower }}Results,
-			},
-            {{- end }}
-		},
+	var nodes []model.SearchResult
+	resultCount := 0
+
+	{{- range $object := $.Objects }}
+	if len({{ $object.Name | toLower }}Results) > 0 {
+		nodes = append(nodes, {{$root.ModelPackage}}{{ $object.Name }}SearchResult{
+			{{ $object.Name | toPlural }}: {{ $object.Name | toLower }}Results,
+		})
+
+		resultCount += len({{ $object.Name | toLower }}Results)
+	}
+	{{- end }}
+
+	return &model.SearchResultConnection{
+		TotalCount: resultCount,
+		Nodes: nodes,
 	}, nil
 }
 
