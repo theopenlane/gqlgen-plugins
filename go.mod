@@ -9,13 +9,13 @@ require (
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/stoewer/go-strcase v1.3.0
 	github.com/stretchr/testify v1.10.0
-	github.com/theopenlane/entx v0.3.0
+	github.com/theopenlane/entx v0.3.1
 	github.com/vektah/gqlparser/v2 v2.5.21
 )
 
 require (
 	ariga.io/atlas v0.26.1 // indirect
-	github.com/XSAM/otelsql v0.35.0 // indirect
+	github.com/XSAM/otelsql v0.36.0 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/agnivade/levenshtein v1.2.0 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
