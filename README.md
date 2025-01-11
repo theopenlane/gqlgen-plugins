@@ -12,6 +12,7 @@ used:
 - bulkgen
 - resovlergen
 - searchgen
+- fieldgen
 
 ## ResolverGen
 
@@ -22,6 +23,11 @@ templates for CRUD operations.
 
 Creates resolvers to do bulk operations for a schema for both bulk input or a
 csv file upload input.
+
+## FieldGen
+
+This plugin is designed to programmatically add additional fields to your graphql schema based on existing fields
+in the schema or the schema name
 
 ## SearchGen
 

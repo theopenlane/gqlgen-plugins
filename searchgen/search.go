@@ -36,7 +36,6 @@ type SearchPlugin struct {
 }
 
 // Name returns the name of the plugin
-// This name must match the upstream resolvergen to replace during code generation
 func (r SearchPlugin) Name() string {
 	return "searchgen"
 }
