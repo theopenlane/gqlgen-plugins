@@ -22,7 +22,7 @@ Now in the simple case, you can manually extend your graphql schema using:
 ```graphql
 extend type Meowzers {
     CreatedByMeow: String
-	UpdatedByMeow: String
+    UpdatedByMeow: String
 }
 ```
 

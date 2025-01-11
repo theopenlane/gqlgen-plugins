@@ -67,7 +67,7 @@ func addCustomType(customType string, cfg *config.Config) {
 	if !exists {
 		cfg.Schema.Types[customType] = &ast.Definition{
 			Name: customType,
-			Kind: ast.Object,
+			Kind: ast.Scalar,
 		}
 
 		src := createAdditionalTypeSource(customType)
