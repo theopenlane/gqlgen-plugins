@@ -9,23 +9,19 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 )
 
-var inputString = `
+// extendString is the string to add a field to the a type in the schema
+var extendString = `
 extend type %s {
 	%s: %s
 }`
 
+// scalarString is the string to add a scalar to the schema
+var scalarString = `scalar %s`
+
+// srcName is the name of the source file to add the additional field to
 var srcName = "generated-by-fieldgen-plugin/%s-%s.graphql"
 
-// createAdditionalSource creates a new source for the additional field
-// so it can be added to the graphql schema and retrieved by resolvergen
-func createAdditionalSource(schemaName, newField, fieldType string) *ast.Source {
-	return &ast.Source{
-		Name:    strings.ToLower(fmt.Sprintf(srcName, schemaName, newField)),
-		Input:   fmt.Sprintf(inputString, schemaName, newField, fieldType),
-		BuiltIn: false,
-	}
-}
-
+// skippers is a list of strings to skip when adding fields to the schema
 var skippers = []string{"History", "Connection", "Edge", "Payload", "AuditLog"}
 
 // skipSchema skips the schema if it contains any of the skippers
@@ -44,8 +40,7 @@ func skipSchema(name string, t *ast.Definition) bool {
 	return false
 }
 
-var scalarString = `scalar %s`
-
+// createAdditionalTypeSource creates a new source for the additional type
 func createAdditionalTypeSource(fieldType string) *ast.Source {
 	return &ast.Source{
 		Name:    strings.ToLower(fmt.Sprintf(srcName, fieldType)),
@@ -54,6 +49,17 @@ func createAdditionalTypeSource(fieldType string) *ast.Source {
 	}
 }
 
+// createAdditionalSource creates a new source for the additional field
+// so it can be added to the graphql schema and retrieved by resolvergen
+func createAdditionalSource(schemaName, newField, fieldType string) *ast.Source {
+	return &ast.Source{
+		Name:    strings.ToLower(fmt.Sprintf(srcName, schemaName, newField)),
+		Input:   fmt.Sprintf(extendString, schemaName, newField, fieldType),
+		BuiltIn: false,
+	}
+}
+
+// addCustomType adds a custom type to the types and sources (graphql schema)
 func addCustomType(customType string, cfg *config.Config) {
 	// add the custom type to the imports
 	exists := false
