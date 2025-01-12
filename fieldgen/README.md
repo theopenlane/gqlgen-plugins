@@ -1,11 +1,10 @@
 # FieldGen
 
-A graphql plugin to conditionally add additional fields to schema(s) that are not part
-of the existing model.
+A graphql plugin to conditionally add fields to schema(s) which are not part of the existing model.
 
-## Details
+## Overview
 
-So you are using ent, and you added some additional fields using their `model/fields/additional`:
+This plugin is for users of the `ent` project who use `ent` in conjunction with GraphQL. When you add additional fields with `ent` using their `model/fields/additional`, ex:
 
 ```
 {{ define "model/fields/additional" }}
@@ -17,7 +16,7 @@ So you are using ent, and you added some additional fields using their `model/fi
 {{ end }}
 ```
 
-Now in the simple case, you can manually extend your graphql schema using:
+You can manually extend your graphql schema, ex:
 
 ```graphql
 extend type Meowzers {
@@ -26,14 +25,13 @@ extend type Meowzers {
 }
 ```
 
-But what if you added it all your schemas, and not just one, and you want all future schemas to also include these fields. You could go manually add those, but computers do this better, so here comes the `fieldgen` plugin.
-
+However, manually managing these fields with many scehmas (and ensuring future schemas are extended similarly) becomes difficult and unwieldy, which is where the `fieldgen` plugin comes into play.
 
 ## Usage
 
-Once you add your additional fields, in whatever manner you want, you can then use this plugin to add them to your graphql schema.
+Once you've added your additional fields (in whatever manner you want) you can use this plugin to add those fields to your graphql schema.
 
-In this example, I want this  new field on every existing schema that has the `createdByID` and `updatedByID` field:
+In the below example, we want a new field on every existing schema that has the `createdByID` and `updatedByID` field:
 
 ```go
 var extraFields = []fieldgen.AdditionalField{
@@ -54,9 +52,9 @@ var extraFields = []fieldgen.AdditionalField{
 }
 ```
 
-You can then add the plugin to your generate function:
+Add the plugin to your `generate` function:
 
-```
+```go
 	if err := api.Generate(cfg,
 		api.AddPlugin(fieldgen.NewExtraFieldsGen(extraFields)), // add the fieldgen plugin
 	); err != nil {
@@ -66,10 +64,8 @@ You can then add the plugin to your generate function:
 
 This uses the `MutateConfig` plugin option so the fields are added before the code is generated.
 
-Running generate, you should see the additional fields in your model and graphql schema.
+After running `generate`, you should see the additional fields in your model and graphql schema.
 
 ## CustomTypes
 
-If you are using a custom type, you can either manually add the scalar to your schema or
-you can use the `CustomType` field instead of `Type`, this will automatically add the type
-to the sources.
+If you are using a custom type, you can either manually add the scalar to your schema or you can use the `CustomType` field instead of `Type`. This will automatically add the type to the respective sources.
