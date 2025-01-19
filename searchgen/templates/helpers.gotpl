@@ -7,7 +7,7 @@
 
 import (
 {{- range $object := $.Objects }}
-    "{{ $.EntImport }}/{{ $object.Name | toLower }}"
+	"{{ $.EntImport }}/{{ $object.Name | toLower }}"
 {{- end }}
 )
 
@@ -28,7 +28,9 @@ func search{{ $object.Name | toPlural }}(ctx context.Context, query string) ([]*
 	return withTransactionalMutation(ctx).{{ $object.Name  }}.Query().Where(
 		{{ $object.Name  | toLower }}.Or(
 			{{- range $i, $field := $object.Fields }}
-			    {{- if eq $field.Type "json.RawMessage" }}
+				{{- if or (eq $field.Name "ID") (eq $field.Name "Identifier") }}
+				{{ $object.Name | toLower }}.{{ $field.Name }}(query), // search equal to {{ $field.Name }}
+				{{- else if eq $field.Type "json.RawMessage" }}
 				func(s *sql.Selector) {
 				{{- if ne $field.Path "" }}
 				s.Where(
@@ -43,6 +45,8 @@ func search{{ $object.Name | toPlural }}(ctx context.Context, query string) ([]*
 					s.Where(sql.ExprP("({{ $field.Name | toLower }})::text LIKE ${{ add $i 1 }}", likeQuery)) // search by {{ $field.Name }}
 				{{- end }}
 				},
+				{{- else if eq $field.Type "int" }}}
+				{{ $object.Name | toLower }}.{{ $field.Name }}(query), // search equal to {{ $field.Name }}
 				{{- else }}
 				{{ $object.Name | toLower }}.{{ $field.Name }}ContainsFold(query), // search by {{ $field.Name }}
 				{{- end }}
@@ -56,7 +60,9 @@ func adminSearch{{ $object.Name | toPlural }}(ctx context.Context, query string)
 	return withTransactionalMutation(ctx).{{ $object.Name  }}.Query().Where(
 		{{ $object.Name  | toLower }}.Or(
 			{{- range $i, $field := $object.AdminFields }}
-  				{{- if eq $field.Type "json.RawMessage" }}
+				{{- if or (eq $field.Name "ID") (eq $field.Name "Identifier") }}
+				{{ $object.Name | toLower }}.{{ $field.Name }}(query), // search equal to {{ $field.Name }}
+				{{- else if eq $field.Type "json.RawMessage" }}
 				func(s *sql.Selector) {
 				{{- if ne $field.Path "" }}
 				s.Where(
@@ -71,6 +77,8 @@ func adminSearch{{ $object.Name | toPlural }}(ctx context.Context, query string)
 					s.Where(sql.ExprP("({{ $field.Name | toLower }})::text LIKE ${{ add $i 1 }}", likeQuery)) // search by {{ $field.Name }}
 				{{- end }}
 				},
+				{{- else if eq $field.Type "int" }}}
+				{{ $object.Name | toLower }}.{{ $field.Name }}(query), // search equal to {{ $field.Name }}
 				{{- else }}
 				{{ $object.Name | toLower }}.{{ $field.Name }}ContainsFold(query), // search by {{ $field.Name }}
 				{{- end }}
