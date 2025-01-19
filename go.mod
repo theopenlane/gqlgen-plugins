@@ -1,6 +1,6 @@
 module github.com/theopenlane/gqlgen-plugins
 
-go 1.23.3
+go 1.23.5
 
 require (
 	entgo.io/contrib v0.6.0
@@ -10,7 +10,7 @@ require (
 	github.com/rs/zerolog v1.33.0
 	github.com/stoewer/go-strcase v1.3.0
 	github.com/stretchr/testify v1.10.0
-	github.com/theopenlane/entx v0.4.1
+	github.com/theopenlane/entx v0.4.2
 	github.com/vektah/gqlparser/v2 v2.5.21
 )
 
