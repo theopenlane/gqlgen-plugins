@@ -35,7 +35,7 @@ var resolverTemplate string
 type SearchPlugin struct {
 	EntGeneratedPackage string
 	ModelPackage        string
-	// IDFields are the fields that are searchable by ID, these are search by equals and not by like
+	// IDFields are the fields that are IDs and should be search with equals instead of like
 	// defaults to ID, DisplayID
 	IDFields []string
 }
@@ -80,6 +80,7 @@ func WithEntGeneratedPackage(entPackage string) Options {
 	}
 }
 
+// WithIDFields sets the fields that are searchable by ID to be used as equal operations instead of like
 func WithIDFields(fields []string) Options {
 	return func(p *SearchPlugin) {
 		p.IDFields = fields
@@ -98,8 +99,7 @@ type SearchResolverBuild struct {
 	ModelImport string
 	// ModelPackage is the package name for the gqlgen model
 	ModelPackage string
-	// IDFields are the fields that are searchable by ID, these are search by equals and not by like
-	// defaults to ID, DisplayID
+	// IDFields are the fields that are IDs and should be search with equals instead of like
 	IDFields []string
 }
 
