@@ -28,7 +28,7 @@ func search{{ $object.Name | toPlural }}(ctx context.Context, query string) ([]*
 	return withTransactionalMutation(ctx).{{ $object.Name  }}.Query().Where(
 		{{ $object.Name  | toLower }}.Or(
 			{{- range $i, $field := $object.Fields }}
-				{{- if or (eq $field.Name "ID") (eq $field.Name "Identifier") }}
+				{{- if isIDField $field.Name $.IDFields }}
 				{{ $object.Name | toLower }}.{{ $field.Name }}(query), // search equal to {{ $field.Name }}
 				{{- else if eq $field.Type "json.RawMessage" }}
 				func(s *sql.Selector) {
@@ -60,7 +60,7 @@ func adminSearch{{ $object.Name | toPlural }}(ctx context.Context, query string)
 	return withTransactionalMutation(ctx).{{ $object.Name  }}.Query().Where(
 		{{ $object.Name  | toLower }}.Or(
 			{{- range $i, $field := $object.AdminFields }}
-				{{- if or (eq $field.Name "ID") (eq $field.Name "Identifier") }}
+				{{- if isIDField $field.Name $.IDFields }}
 				{{ $object.Name | toLower }}.{{ $field.Name }}(query), // search equal to {{ $field.Name }}
 				{{- else if eq $field.Type "json.RawMessage" }}
 				func(s *sql.Selector) {
