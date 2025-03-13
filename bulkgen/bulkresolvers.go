@@ -126,11 +126,12 @@ func (m *Plugin) generateSingleFile(data codegen.Data) error {
 
 	if m.CSVOutputPath == "" {
 		m.CSVOutputPath = data.Config.Resolver.Dir() + "/csv"
-		// create the directory if it does not exist
-		if _, err := os.Stat(m.CSVOutputPath); os.IsNotExist(err) {
-			if err := os.MkdirAll(m.CSVOutputPath, os.ModePerm); err != nil {
-				return err
-			}
+	}
+
+	// create the directory if it does not exist
+	if _, err := os.Stat(m.CSVOutputPath); os.IsNotExist(err) {
+		if err := os.MkdirAll(m.CSVOutputPath, os.ModePerm); err != nil {
+			return err
 		}
 	}
 
