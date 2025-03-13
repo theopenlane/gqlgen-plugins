@@ -124,6 +124,16 @@ func (m *Plugin) generateSingleFile(data codegen.Data) error {
 		inputData.ModelPackage = modelPkg
 	}
 
+	if m.CSVOutputPath == "" {
+		m.CSVOutputPath = data.Config.Resolver.Dir() + "/csv"
+		// create the directory if it does not exist
+		if _, err := os.Stat(m.CSVOutputPath); os.IsNotExist(err) {
+			if err := os.MkdirAll(m.CSVOutputPath, os.ModePerm); err != nil {
+				return err
+			}
+		}
+	}
+
 	for _, f := range data.Schema.Mutation.Fields {
 		lowerName := strings.ToLower(f.Name)
 
@@ -140,15 +150,6 @@ func (m *Plugin) generateSingleFile(data codegen.Data) error {
 
 			inputData.Objects = append(inputData.Objects, object)
 
-			if m.CSVOutputPath == "" {
-				m.CSVOutputPath = fmt.Sprintf(data.Config.Resolver.Dir() + "/csv")
-				// create the directory if it does not exist
-				if _, err := os.Stat(m.CSVOutputPath); os.IsNotExist(err) {
-					if err := os.MkdirAll(m.CSVOutputPath, os.ModePerm); err != nil {
-						return err
-					}
-				}
-			}
 			// Generate and write the CSV file
 			if err := generateSampleCSV(object, m.CSVOutputPath); err != nil {
 				return err
