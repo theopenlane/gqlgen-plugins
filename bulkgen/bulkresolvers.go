@@ -9,6 +9,8 @@ import (
 	"github.com/99designs/gqlgen/codegen/templates"
 	"github.com/99designs/gqlgen/plugin"
 	"github.com/gertd/go-pluralize"
+	"github.com/stoewer/go-strcase"
+	gqlast "github.com/vektah/gqlparser/v2/ast"
 )
 
 //go:embed bulk.gotpl
@@ -78,6 +80,8 @@ type Object struct {
 	Name string
 	// PluralName of the object
 	PluralName string
+	// Fields of the object
+	Fields []string
 }
 
 // GenerateCode generates the bulk resolver code
@@ -119,6 +123,7 @@ func (m *Plugin) generateSingleFile(data codegen.Data) error {
 			inputData.Objects = append(inputData.Objects, Object{
 				Name:       objectName,
 				PluralName: pluralize.NewClient().Plural(objectName),
+				Fields:     getCreateInputFields(f, data),
 			})
 		}
 	}
@@ -135,4 +140,16 @@ func (m *Plugin) generateSingleFile(data codegen.Data) error {
 		Packages: data.Config.Packages,
 		Template: bulkTemplate,
 	})
+}
+
+// getCreateInputFields returns the list of fields available in the Create<object>Input
+func getCreateInputFields(field *gqlast.FieldDefinition, data codegen.Data) (inputFields []string) {
+	for _, arg := range field.Arguments {
+		if arg.Type.NamedType != "" && data.Schema.Types[arg.Type.NamedType].Kind == gqlast.InputObject {
+			for _, f := range data.Schema.Types[arg.Type.NamedType].Fields {
+				inputFields = append(inputFields, strcase.UpperCamelCase(f.Name))
+			}
+		}
+	}
+	return inputFields
 }
