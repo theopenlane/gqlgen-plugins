@@ -1,5 +1,7 @@
 {{ reserveImport "context"  }}
-{{ reserveImport "errors"  }}
+{{ reserveImport "encoding/csv" }}
+{{ reserveImport "os" }}
+{{ reserveImport "fmt" }}
 
 {{- if $.EntImport }}
 {{ reserveImport $.EntImport }}
@@ -30,6 +32,41 @@ func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, in
 	return &{{ $root.ModelPackage }}{{ $object.Name }}BulkCreatePayload{
 		{{ $object.PluralName }}: res,
 	}, nil
+}
+
+// generateSampleCSV{{ $object.Name }} generates a sample CSV file for {{ $object.Name }} based on the Create{{ $object.Name }}Input fields
+func generateSampleCSV{{ $object.Name }}() error {
+	headers := []string{
+		{{- range $field := $object.Fields }}
+		"{{ $field }}",
+		{{- end }}
+	}
+
+	file, err := os.Create(fmt.Sprintf("sample_{{ $object.Name | toLower }}.csv"))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	if err := writer.Write(headers); err != nil {
+		return err
+	}
+
+	// Add example row
+	exampleRow := []string{
+		{{- range $field := $object.Fields }}
+		"example_{{ $field | toLower }}",
+		{{- end }}
+	}
+	if err := writer.Write(exampleRow); err != nil {
+		return err
+	}
+
+	fmt.Printf("Sample CSV for {{ $object.Name }} created: sample_{{ $object.Name | toLower }}.csv\n")
+	return nil
 }
 
 {{ end }}
