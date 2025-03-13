@@ -2,6 +2,9 @@ package bulkgen
 
 import (
 	_ "embed"
+	"encoding/csv"
+	"fmt"
+	"os"
 	"strings"
 	"text/template"
 
@@ -9,6 +12,7 @@ import (
 	"github.com/99designs/gqlgen/codegen/templates"
 	"github.com/99designs/gqlgen/plugin"
 	"github.com/gertd/go-pluralize"
+	"github.com/rs/zerolog/log"
 	"github.com/stoewer/go-strcase"
 )
 
@@ -48,12 +52,21 @@ func WithEntGeneratedPackage(entPackage string) Options {
 	}
 }
 
+// WithCSVOutputPath sets the file path location that CSVs are written to
+func WithCSVOutputPath(path string) Options {
+	return func(p *Plugin) {
+		p.CSVOutputPath = path
+	}
+}
+
 // Plugin is a gqlgen plugin to generate bulk resolver functions used for mutations
 type Plugin struct {
 	// ModelPackage is the package name for the gqlgen model
 	ModelPackage string
 	// EntGeneratedPackage is the ent generated package that holds the generated types
 	EntGeneratedPackage string
+	// CSVOutputPath is the file path location that CSVs are written to
+	CSVOutputPath string
 }
 
 // Name returns the name of the plugin
@@ -119,11 +132,27 @@ func (m *Plugin) generateSingleFile(data codegen.Data) error {
 		if strings.Contains(lowerName, "bulk") && !strings.Contains(lowerName, "csv") {
 			objectName := strings.Replace(f.Name, "createBulk", "", 1)
 
-			inputData.Objects = append(inputData.Objects, Object{
+			object := Object{
 				Name:       objectName,
 				PluralName: pluralize.NewClient().Plural(objectName),
 				Fields:     getCreateInputFields(objectName, data),
-			})
+			}
+
+			inputData.Objects = append(inputData.Objects, object)
+
+			if m.CSVOutputPath == "" {
+				m.CSVOutputPath = fmt.Sprintf(data.Config.Resolver.Dir() + "/csv")
+				// create the directory if it does not exist
+				if _, err := os.Stat(m.CSVOutputPath); os.IsNotExist(err) {
+					if err := os.MkdirAll(m.CSVOutputPath, os.ModePerm); err != nil {
+						return err
+					}
+				}
+			}
+			// Generate and write the CSV file
+			if err := generateSampleCSV(object, m.CSVOutputPath); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -150,4 +179,38 @@ func getCreateInputFields(objectName string, data codegen.Data) (inputFields []s
 		}
 	}
 	return inputFields
+}
+
+// generateSampleCSV generates a sample CSV file for the given object
+func generateSampleCSV(object Object, outputPath string) error {
+	headers := object.Fields
+
+	filePath := fmt.Sprintf("%s/sample_%s.csv", outputPath, strings.ToLower(object.Name))
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+
+	defer writer.Flush()
+
+	if err := writer.Write(headers); err != nil {
+		return err
+	}
+
+	exampleRow := make([]string, len(headers))
+	for i := range headers {
+		exampleRow[i] = fmt.Sprintf("example_%s", strings.ToLower(headers[i]))
+	}
+	if err := writer.Write(exampleRow); err != nil {
+		return err
+	}
+
+	log.Debug().Msgf("Sample CSV for %s created: %s", object.Name, filePath)
+
+	return nil
 }
