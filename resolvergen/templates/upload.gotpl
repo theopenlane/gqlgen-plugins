@@ -2,6 +2,9 @@
 
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 
+// grab preloads and set max result limits
+graphutils.GetPreloads(ctx, r.maxResultLimit)
+
 data, err := unmarshalBulkData[generated.Create{{ $entity }}Input](input)
 if err != nil {
 	log.Error().Err(err).Msg("failed to unmarshal bulk data")

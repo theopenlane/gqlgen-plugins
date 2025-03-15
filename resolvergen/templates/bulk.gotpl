@@ -1,3 +1,6 @@
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 
+// grab preloads and set max result limits
+graphutils.GetPreloads(ctx, r.maxResultLimit)
+
 return r.bulkCreate{{ $entity }}(ctx, input)

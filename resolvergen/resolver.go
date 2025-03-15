@@ -24,8 +24,8 @@ type ResolverPlugin struct {
 
 	modelPackage string
 
-	// EntGeneratedPackage is the ent generated package that holds the generated types
-	EntGeneratedPackage string
+	// entGeneratedPackage is the ent generated package that holds the generated types
+	entGeneratedPackage string
 }
 
 // Name returns the name of the plugin
@@ -56,7 +56,7 @@ type Options func(*ResolverPlugin)
 // WithEntGeneratedPackage sets the ent generated package for imports
 func WithEntGeneratedPackage(entPackage string) Options {
 	return func(p *ResolverPlugin) {
-		p.EntGeneratedPackage = entPackage
+		p.entGeneratedPackage = entPackage
 	}
 }
 

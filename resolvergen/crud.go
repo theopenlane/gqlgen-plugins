@@ -66,7 +66,7 @@ func (r *ResolverPlugin) renderCreate(field *codegen.Field) string {
 	return renderTemplate("create.gotpl", &crudResolver{
 		Field:        field,
 		ModelPackage: r.modelPackage,
-		EntImport:    r.EntGeneratedPackage,
+		EntImport:    r.entGeneratedPackage,
 	})
 }
 
@@ -78,7 +78,7 @@ func (r *ResolverPlugin) renderUpdate(field *codegen.Field) string {
 		Field:        field,
 		AppendFields: appendFields,
 		ModelPackage: r.modelPackage,
-		EntImport:    r.EntGeneratedPackage,
+		EntImport:    r.entGeneratedPackage,
 	}
 
 	return renderTemplate("update.gotpl", cr)
@@ -89,7 +89,7 @@ func (r *ResolverPlugin) renderDelete(field *codegen.Field) string {
 	return renderTemplate("delete.gotpl", &crudResolver{
 		Field:        field,
 		ModelPackage: r.modelPackage,
-		EntImport:    r.EntGeneratedPackage,
+		EntImport:    r.entGeneratedPackage,
 	})
 }
 
@@ -98,7 +98,7 @@ func (r *ResolverPlugin) renderBulkUpload(field *codegen.Field) string {
 	return renderTemplate("upload.gotpl", &crudResolver{
 		Field:        field,
 		ModelPackage: r.modelPackage,
-		EntImport:    r.EntGeneratedPackage,
+		EntImport:    r.entGeneratedPackage,
 	})
 }
 
@@ -107,7 +107,7 @@ func (r *ResolverPlugin) renderBulk(field *codegen.Field) string {
 	return renderTemplate("bulk.gotpl", &crudResolver{
 		Field:        field,
 		ModelPackage: r.modelPackage,
-		EntImport:    r.EntGeneratedPackage,
+		EntImport:    r.entGeneratedPackage,
 	})
 }
 
@@ -116,7 +116,7 @@ func (r *ResolverPlugin) renderQuery(field *codegen.Field) string {
 	return renderTemplate("get.gotpl", &crudResolver{
 		Field:        field,
 		ModelPackage: r.modelPackage,
-		EntImport:    r.EntGeneratedPackage,
+		EntImport:    r.entGeneratedPackage,
 	})
 }
 
@@ -124,7 +124,7 @@ func (r *ResolverPlugin) renderQuery(field *codegen.Field) string {
 func (r *ResolverPlugin) renderList(field *codegen.Field) string {
 	return renderTemplate("list.gotpl", &crudResolver{
 		Field:     field,
-		EntImport: r.EntGeneratedPackage,
+		EntImport: r.entGeneratedPackage,
 	})
 }
 
@@ -145,17 +145,6 @@ var stripStrings = []string{CreateOperation, UpdateOperation, DeleteOperation, B
 
 // getEntityName returns the entity name by stripping the CRUD operation from the resolver name
 func getEntityName(name string) string {
-	for _, s := range stripStrings {
-		if strings.Contains(name, s) {
-			name = strings.ReplaceAll(name, s, "")
-		}
-	}
-
-	return name
-}
-
-// getFieldName returns the field name by stripping the CRUD operation from the resolver name
-func getFieldName(name string) string {
 	for _, s := range stripStrings {
 		if strings.Contains(name, s) {
 			name = strings.ReplaceAll(name, s, "")

@@ -7,9 +7,15 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
+const (
+	firstArg = "first"
+	lastArg  = "last"
+)
+
 // CheckForRequestedField checks if the requested field is in the list of fields from the request
 func CheckForRequestedField(ctx context.Context, fieldName string) bool {
-	fields := GetPreloads(ctx)
+	// we don't care about the maxPageSize for this function
+	fields := GetPreloads(ctx, nil)
 	if fields == nil {
 		return false
 	}
@@ -31,7 +37,7 @@ func CheckForRequestedField(ctx context.Context, fieldName string) bool {
 }
 
 // GetPreloads returns the preloads for the current graphql operation
-func GetPreloads(ctx context.Context) []string {
+func GetPreloads(ctx context.Context, mxPageLimit *int) []string {
 	// skip if the context is not a graphql operation context
 	if ok := graphql.HasOperationContext(ctx); !ok {
 		return nil
@@ -46,6 +52,7 @@ func GetPreloads(ctx context.Context) []string {
 		gCtx,
 		graphql.CollectFieldsCtx(ctx, nil),
 		"",
+		mxPageLimit,
 	)
 }
 
@@ -84,11 +91,18 @@ func GetMapInputVariableByName(ctx context.Context, fieldName string) *map[strin
 }
 
 // getNestedPreloads returns the nested preloads for the current graphql operation
-func getNestedPreloads(ctx *graphql.OperationContext, fields []graphql.CollectedField, prefix string) (preloads []string) {
+func getNestedPreloads(ctx *graphql.OperationContext, fields []graphql.CollectedField, prefix string, maxPageSize *int) (preloads []string) {
 	for _, column := range fields {
 		prefixColumn := getPreloadString(prefix, column.Name)
+
+		// set limits on edges if max page size is set
+		if maxPageSize != nil {
+			setDefaultPaginationLimit(&column, maxPageSize)
+		}
+
+		// add the current column to the preloads
 		preloads = append(preloads, prefixColumn)
-		preloads = append(preloads, getNestedPreloads(ctx, graphql.CollectFields(ctx, column.Selections, nil), prefixColumn)...)
+		preloads = append(preloads, getNestedPreloads(ctx, graphql.CollectFields(ctx, column.Selections, nil), prefixColumn, maxPageSize)...)
 	}
 
 	return
