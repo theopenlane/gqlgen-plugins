@@ -114,7 +114,7 @@ func (m *Plugin) generateSingleFile(data codegen.Data) error {
 		EntImport:   m.EntGeneratedPackage,
 	}
 
-	// only add the model package if te import is not empty
+	// only add the model package if the import is not empty
 	if m.ModelPackage != "" {
 		modelPkg := data.Config.Model.Package
 		if modelPkg != "" {
