@@ -7,6 +7,7 @@ import (
 	"github.com/99designs/gqlgen/codegen"
 	"github.com/99designs/gqlgen/plugin"
 	"github.com/99designs/gqlgen/plugin/resolvergen"
+	"github.com/vektah/gqlparser/v2/ast"
 )
 
 var (
@@ -22,6 +23,9 @@ type ResolverPlugin struct {
 	*resolvergen.Plugin
 
 	modelPackage string
+
+	// entGeneratedPackage is the ent generated package that holds the generated types
+	entGeneratedPackage string
 }
 
 // Name returns the name of the plugin
@@ -35,6 +39,27 @@ func New() *ResolverPlugin {
 	return &ResolverPlugin{}
 }
 
+// NewWithOptions returns a new plugin with the given options
+func NewWithOptions(opts ...Options) *ResolverPlugin {
+	r := &ResolverPlugin{}
+
+	for _, opt := range opts {
+		opt(r)
+	}
+
+	return r
+}
+
+// Options is a function to set the options for the plugin
+type Options func(*ResolverPlugin)
+
+// WithEntGeneratedPackage sets the ent generated package for imports
+func WithEntGeneratedPackage(entPackage string) Options {
+	return func(p *ResolverPlugin) {
+		p.entGeneratedPackage = entPackage
+	}
+}
+
 // Implement gqlgen api.ResolverImplementer
 func (r *ResolverPlugin) Implement(s string, f *codegen.Field) (val string) {
 	// if the field has a custom resolver, use it
@@ -44,10 +69,10 @@ func (r *ResolverPlugin) Implement(s string, f *codegen.Field) (val string) {
 	}
 
 	switch {
-	case isMutation(f):
-		return mutationImplementer(f, r.modelPackage)
+	case isMutation(f), isInput(f):
+		return r.mutationImplementer(f)
 	case isQuery(f):
-		return queryImplementer(f, r.modelPackage)
+		return r.queryImplementer(f)
 	default:
 		return fmt.Sprintf(defaultImplementation, f.GoFieldName, f.Name)
 	}
@@ -66,54 +91,66 @@ func (r *ResolverPlugin) GenerateCode(data *codegen.Data) error {
 
 // isMutation returns true if the field is a mutation
 func isMutation(f *codegen.Field) bool {
-	return f.Object.Definition.Name == "Mutation"
+	return strings.EqualFold(f.Object.Definition.Name, string(ast.Mutation))
 }
 
 // isQuery returns true if the field is a query
 func isQuery(f *codegen.Field) bool {
-	return f.Object.Definition.Name == "Query"
+	return strings.EqualFold(f.Object.Definition.Name, string(ast.Query))
+}
+
+// isQuery returns true if the field is a query
+func isInput(f *codegen.Field) bool {
+	return strings.Contains(f.Object.Definition.Name, "Input")
 }
 
 // mutationImplementer returns the implementation for the mutation
-func mutationImplementer(f *codegen.Field, modelPackage string) string {
+func (r *ResolverPlugin) mutationImplementer(f *codegen.Field) string {
 	switch crudType(f) {
-	case "BulkCSV":
-		return renderBulkUpload(f, modelPackage)
-	case "Bulk":
-		return renderBulk(f, modelPackage)
-	case "Create":
-		return renderCreate(f, modelPackage)
-	case "Update":
-		return renderUpdate(f, modelPackage)
-	case "Delete":
-		return renderDelete(f, modelPackage)
+	case BulkCSVOperation:
+		return r.renderBulkUpload(f)
+	case BulkOperation:
+		return r.renderBulk(f)
+	case CreateOperation:
+		return r.renderCreate(f)
+	case UpdateOperation:
+		return r.renderUpdate(f)
+	case DeleteOperation:
+		return r.renderDelete(f)
+	case InputObject:
+		// this is needed to handle input fields that are not CRUD operations
+		// first case is RevisionBump - might need to extend for others later
+		return r.renderUpdate(f)
 	default:
 		return fmt.Sprintf(defaultImplementation, f.GoFieldName, f.Name)
 	}
 }
 
 // queryImplementer returns the implementation for the query
-func queryImplementer(f *codegen.Field, modelPackage string) string {
-	if strings.Contains(f.TypeReference.Definition.Name, "Connection") {
-		return renderList(f, modelPackage)
+func (r *ResolverPlugin) queryImplementer(f *codegen.Field) string {
+	if strings.Contains(f.TypeReference.Definition.Name, Connection) {
+		return r.renderList(f)
 	}
 
-	return renderQuery(f, modelPackage)
+	return r.renderQuery(f)
 }
 
 // crudType returns the type of CRUD operation
 func crudType(f *codegen.Field) string {
 	switch {
-	case strings.Contains(f.GoFieldName, "CSV"):
-		return "BulkCSV"
-	case strings.Contains(f.GoFieldName, "Bulk"):
-		return "Bulk"
-	case strings.Contains(f.GoFieldName, "Create"):
-		return "Create"
-	case strings.Contains(f.GoFieldName, "Update"):
-		return "Update"
-	case strings.Contains(f.GoFieldName, "Delete"):
-		return "Delete"
+	case strings.Contains(f.GoFieldName, CSVOperation):
+		return BulkCSVOperation
+	case strings.Contains(f.GoFieldName, BulkOperation):
+		return BulkOperation
+	case strings.Contains(f.GoFieldName, CreateOperation):
+		return CreateOperation
+	case strings.Contains(f.GoFieldName, UpdateOperation):
+		return UpdateOperation
+	case strings.Contains(f.GoFieldName, DeleteOperation):
+		return DeleteOperation
+	// special case for input types that need mapped
+	case f.TypeReference.Definition.Kind == ast.Scalar:
+		return InputObject
 	default:
 		return "unknown"
 	}

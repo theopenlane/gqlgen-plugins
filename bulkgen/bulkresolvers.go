@@ -114,7 +114,7 @@ func (m *Plugin) generateSingleFile(data codegen.Data) error {
 		EntImport:   m.EntGeneratedPackage,
 	}
 
-	// only add the model package if te import is not empty
+	// only add the model package if the import is not empty
 	if m.ModelPackage != "" {
 		modelPkg := data.Config.Model.Package
 		if modelPkg != "" {
@@ -180,6 +180,7 @@ func getCreateInputFields(objectName string, data codegen.Data) (inputFields []s
 			inputFields = append(inputFields, strcase.UpperCamelCase(f.Name))
 		}
 	}
+
 	return inputFields
 }
 
@@ -208,6 +209,7 @@ func generateSampleCSV(object Object, outputPath string) error {
 	for i := range headers {
 		exampleRow[i] = fmt.Sprintf("example_%s", strings.ToLower(headers[i]))
 	}
+
 	if err := writer.Write(exampleRow); err != nil {
 		return err
 	}

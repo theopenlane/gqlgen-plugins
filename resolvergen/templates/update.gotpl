@@ -5,6 +5,19 @@
 {{ $isOrgOwned := .Field | hasOwnerField  -}}
 {{ $modelPackage := .ModelPackage | modelPackage -}}
 
+{{- if eq .Field.GoFieldName "RevisionBump" }}
+	if data == nil {
+		return nil
+	}
+
+	models.WithVersionBumpRequestContext(ctx, data)
+
+	return nil
+{{- else }}
+
+// grab preloads and set max result limits
+graphutils.GetPreloads(ctx, r.maxResultLimit)
+
 res, err := withTransactionalMutation(ctx).{{ $entity }}.Get(ctx, id)
 if err != nil {
 	return nil, parseRequestError(err, action{action: ActionUpdate, object: "{{ $entity | toLower }}"})
@@ -30,3 +43,5 @@ if err != nil {
 return &{{ $modelPackage }}{{ $entity }}UpdatePayload{
 	{{ $entity }}: res,
 	}, nil
+
+{{- end }}

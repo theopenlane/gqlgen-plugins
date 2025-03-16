@@ -1,3 +1,5 @@
+{{ reserveImport "github.com/theopenlane/gqlgen-plugins/graphutils" }}
+
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName -}}
 {{ $hasAfter := hasArgument "after" .Field.FieldDefinition.Arguments }}
 {{ $hasFirst := hasArgument "first" .Field.FieldDefinition.Arguments }}
@@ -6,7 +8,20 @@
 {{ $hasOrderBy := hasArgument "orderBy" .Field.FieldDefinition.Arguments }}
 {{ $hasWhere := hasArgument "where" .Field.FieldDefinition.Arguments }}
 
-res, err :=  withTransactionalMutation(ctx).{{ $entity }}.Query().Paginate(
+// determine all fields that were requested
+preloads := graphutils.GetPreloads(ctx, r.maxResultLimit)
+
+{{ if and $hasFirst $hasLast }}
+// set page limit if nothing was set
+first, last = graphutils.SetFirstLastDefaults(first, last, r.maxResultLimit)
+{{- end }}
+
+query, err :=  withTransactionalMutation(ctx).{{ $entity }}.Query().CollectFields(ctx, preloads...)
+if err != nil {
+	return nil, parseRequestError(err, action{action: ActionGet, object: "{{ $entity | toLower }}"})
+}
+
+res, err := query.Paginate(
 	ctx,
 	{{- if $hasAfter }}
 	after,
