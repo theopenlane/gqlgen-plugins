@@ -8,9 +8,11 @@ require (
 	github.com/99designs/gqlgen v0.17.66
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/rs/zerolog v1.33.0
+	github.com/samber/lo v1.49.1
 	github.com/stoewer/go-strcase v1.3.0
 	github.com/stretchr/testify v1.10.0
 	github.com/theopenlane/entx v0.5.0
+	github.com/vektah/gqlparser v1.3.1
 	github.com/vektah/gqlparser/v2 v2.5.23
 )
 
