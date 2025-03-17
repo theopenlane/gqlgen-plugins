@@ -12,7 +12,7 @@ if err != nil {
 	return nil, parseRequestError(err, action{action: ActionUpdate, object: "{{ $entity | toLower }}"})
 }
 
-{{- if $isOrgOwned }}
+{{ if $isOrgOwned }}
 // set the organization in the auth context if its not done for us
 if err := setOrganizationInAuthContext(ctx, &res.OwnerID); err != nil {
 	log.Error().Err(err).Msg("failed to set organization in auth context")

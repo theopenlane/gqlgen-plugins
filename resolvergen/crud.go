@@ -187,6 +187,10 @@ func hasOwnerField(field *codegen.Field) bool {
 		// check the input of the create, instead of the update since its immutable
 		checkFieldName := strings.Replace(field.Name, "update", "create", 1)
 
+		// remove the Bulk and BulkCSV from fields
+		checkFieldName = strings.ReplaceAll(checkFieldName, BulkOperation, "")
+		checkFieldName = strings.ReplaceAll(checkFieldName, CSVOperation, "")
+
 		if field.Object.HasField(checkFieldName) {
 			for _, obj := range field.Object.Fields {
 				if obj.Name == checkFieldName {
