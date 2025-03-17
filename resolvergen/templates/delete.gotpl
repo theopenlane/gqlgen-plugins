@@ -1,14 +1,16 @@
-{{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
-{{ $modelPackage := .ModelPackage | modelPackage -}}
+{{/* Include all custom fields */}}
+{{- if $.IncludeCustomUpdateFields }}
+	{{- if eq .Field.GoFieldName "DeleteComment" }}
+		{{ template "deletecomment" . }}
 
-if err := withTransactionalMutation(ctx).{{ $entity }}.DeleteOneID(id).Exec(ctx); err != nil {
-	return nil, parseRequestError(err, action{action: ActionDelete, object: "{{ $entity | toLower }}"})
-}
+	{{- else }}
 
-if err := generated.{{ $entity }}EdgeCleanup(ctx, id); err != nil {
-	return nil, newCascadeDeleteError(err)
-}
+	{{ template "baseResolver" . }}
 
-return &{{ $modelPackage }}{{ $entity }}DeletePayload{
-	DeletedID: id,
-}, nil
+	{{- end }}
+
+{{- else }}
+	{{/* Only include base resolver template */}}
+
+	{{ template "baseResolver" . }}
+{{- end }}

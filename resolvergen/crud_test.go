@@ -98,3 +98,93 @@ func TestGetEntityName(t *testing.T) {
 		})
 	}
 }
+func TestIsCommentUpdateOnObject(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{
+			name:     "is comment update",
+			input:    "UpdateComment",
+			expected: true,
+		},
+		{
+			name:     "update task comment",
+			input:    "UpdateTaskComment",
+			expected: true,
+		},
+		{
+			name:     "is not comment update",
+			input:    "UpdatePost",
+			expected: false,
+		},
+		{
+			name:     "contains comment but not update",
+			input:    "CreateComment",
+			expected: false,
+		},
+		{
+			name:     "contains update but not comment",
+			input:    "UpdateUser",
+			expected: false,
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			res := isCommentUpdateOnObject(tc.input)
+			assert.Equal(t, tc.expected, res)
+		})
+	}
+}
+func TestGetInputObjectName(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "strip CreateOperation",
+			input:    "CreateUserInput",
+			expected: "User",
+		},
+		{
+			name:     "strip UpdateOperation",
+			input:    "UpdatePostInput",
+			expected: "Post",
+		},
+		{
+			name:     "strip InputObject",
+			input:    "UserInput",
+			expected: "User",
+		},
+		{
+			name:     "strip Create and InputObject",
+			input:    "CreateProductInput",
+			expected: "Product",
+		},
+		{
+			name:     "strip Update and InputObject",
+			input:    "UpdateOrderInput",
+			expected: "Order",
+		},
+		{
+			name:     "no strip",
+			input:    "User",
+			expected: "User",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			res := getInputObjectName(tc.input)
+			assert.Equal(t, tc.expected, res)
+		})
+	}
+}

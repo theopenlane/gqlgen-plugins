@@ -1,0 +1,16 @@
+{{ define "baseResolver" }}
+{{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
+{{ $modelPackage := .ModelPackage | modelPackage -}}
+
+if err := withTransactionalMutation(ctx).{{ $entity }}.DeleteOneID(id).Exec(ctx); err != nil {
+	return nil, parseRequestError(err, action{action: ActionDelete, object: "{{ $entity | toLower }}"})
+}
+
+if err := generated.{{ $entity }}EdgeCleanup(ctx, id); err != nil {
+	return nil, newCascadeDeleteError(err)
+}
+
+return &{{ $modelPackage }}{{ $entity }}DeletePayload{
+	DeletedID: id,
+}, nil
+{{ end }}

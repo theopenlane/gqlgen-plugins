@@ -1,6 +1,7 @@
 {{ reserveImport "github.com/rs/zerolog/log" }}
 
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
+{{ $isOrgOwned := .Field | hasOwnerField  -}}
 
 // grab preloads and set max result limits
 graphutils.GetPreloads(ctx, r.maxResultLimit)
@@ -11,5 +12,19 @@ if err != nil {
 
 	return nil, err
 }
+
+if len(data) == 0 {
+    return nil, rout.NewMissingRequiredFieldError("input")
+}
+
+{{- if $isOrgOwned }}
+// set the organization in the auth context if its not done for us
+// this will choose the first input OwnerID when using a personal access token
+if err := setOrganizationInAuthContextBulkRequest(ctx, data); err != nil {
+    log.Error().Err(err).Msg("failed to set organization in auth context")
+
+    return nil, rout.NewMissingRequiredFieldError("owner_id")
+}
+{{- end }}
 
 return r.bulkCreate{{ $entity }}(ctx, data)

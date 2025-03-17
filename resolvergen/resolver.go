@@ -26,6 +26,11 @@ type ResolverPlugin struct {
 
 	// entGeneratedPackage is the ent generated package that holds the generated types
 	entGeneratedPackage string
+
+	// includeCustomFields includes custom resolver fields for updates, templates
+	// are stored in `templates/updatefields/*.gotpl`, `templates/deletefields/*.gotpl`
+	// defaults to true
+	includeCustomFields bool
 }
 
 // Name returns the name of the plugin
@@ -36,12 +41,14 @@ func (r ResolverPlugin) Name() string {
 
 // New returns a new resolver plugin
 func New() *ResolverPlugin {
-	return &ResolverPlugin{}
+	return &ResolverPlugin{
+		includeCustomFields: true,
+	}
 }
 
 // NewWithOptions returns a new plugin with the given options
 func NewWithOptions(opts ...Options) *ResolverPlugin {
-	r := &ResolverPlugin{}
+	r := New()
 
 	for _, opt := range opts {
 		opt(r)
@@ -57,6 +64,13 @@ type Options func(*ResolverPlugin)
 func WithEntGeneratedPackage(entPackage string) Options {
 	return func(p *ResolverPlugin) {
 		p.entGeneratedPackage = entPackage
+	}
+}
+
+// WithExcludeCustomUpdateFields excludes custom resolver fields for updates resolvers
+func WithExcludeCustomUpdateFields() Options {
+	return func(p *ResolverPlugin) {
+		p.includeCustomFields = false
 	}
 }
 
@@ -144,7 +158,7 @@ func crudType(f *codegen.Field) string {
 		return BulkOperation
 	case strings.Contains(f.GoFieldName, CreateOperation):
 		return CreateOperation
-	case strings.Contains(f.GoFieldName, UpdateOperation):
+	case strings.Contains(f.GoFieldName, UpdateOperation), strings.Contains(f.GoFieldName, AddOperation):
 		return UpdateOperation
 	case strings.Contains(f.GoFieldName, DeleteOperation):
 		return DeleteOperation
