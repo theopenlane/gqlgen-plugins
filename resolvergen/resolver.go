@@ -158,7 +158,9 @@ func crudType(f *codegen.Field) string {
 		return BulkOperation
 	case strings.Contains(f.GoFieldName, CreateOperation):
 		return CreateOperation
-	case strings.Contains(f.GoFieldName, UpdateOperation), strings.Contains(f.GoFieldName, AddOperation):
+	case strings.Contains(f.GoFieldName, UpdateOperation),
+		// also include Add, which is an update to a parent object with a child object (e.g. add comment to a task)
+		strings.Contains(f.GoFieldName, AddOperation):
 		return UpdateOperation
 	case strings.Contains(f.GoFieldName, DeleteOperation):
 		return DeleteOperation

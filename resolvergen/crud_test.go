@@ -150,21 +150,6 @@ func TestGetInputObjectName(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "strip CreateOperation",
-			input:    "CreateUserInput",
-			expected: "User",
-		},
-		{
-			name:     "strip UpdateOperation",
-			input:    "UpdatePostInput",
-			expected: "Post",
-		},
-		{
-			name:     "strip InputObject",
-			input:    "UserInput",
-			expected: "User",
-		},
-		{
 			name:     "strip Create and InputObject",
 			input:    "CreateProductInput",
 			expected: "Product",
@@ -173,6 +158,11 @@ func TestGetInputObjectName(t *testing.T) {
 			name:     "strip Update and InputObject",
 			input:    "UpdateOrderInput",
 			expected: "Order",
+		},
+		{
+			name:     "strip InputObject",
+			input:    "UserInput",
+			expected: "User",
 		},
 		{
 			name:     "no strip",

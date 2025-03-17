@@ -27,7 +27,7 @@ type crudResolver struct {
 	ModelPackage string
 	// EntImport is the ent import for the generated types
 	EntImport string
-	// IncludeCustomUpdateFields is a flag to include custom update fields
+	// IncludeCustomUpdateFields is a flag to include custom fields
 	IncludeCustomUpdateFields bool
 }
 
