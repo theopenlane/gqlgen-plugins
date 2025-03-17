@@ -1,0 +1,73 @@
+{{ define "addcomment" }}
+{{/* We need the input type, not the entity because its creating a note under another object type */}}
+{{ $inputType := .Field.Object.Name | getInputObjectName}}
+
+if data == nil {
+    return nil
+}
+
+// set the organization in the auth context if its not done for us
+if err := setOrganizationInAuthContext(ctx, data.OwnerID); err != nil {
+    log.Error().Err(err).Msg("failed to set organization in auth context")
+
+    return rout.NewMissingRequiredFieldError("owner_id")
+}
+
+data.{{ $inputType }}ID = graphutils.GetStringInputVariableByName(ctx, "id")
+if data.{{ $inputType }}ID == nil {
+    return newNotFoundError("{{ $inputType | toLower }}")
+}
+
+if err := withTransactionalMutation(ctx).Note.Create().SetInput(*data).Exec(ctx); err != nil {
+    return parseRequestError(err, action{action: ActionCreate, object: "comment"})
+}
+
+return nil
+{{ end }}
+
+{{ define "updatecomment" }}
+
+{{/* entity on update is the parent object (e.g. Task) not the input so we can safely use entity here like other updates */}}
+{{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
+
+{{ $import := print $.EntImport "/" $entity | toLower }}
+{{ reserveImport $import}}
+
+res, err := withTransactionalMutation(ctx).Note.Get(ctx, id)
+if err != nil {
+    return nil, parseRequestError(err, action{action: ActionUpdate, object: "{{ $entity | toLower}}"})
+}
+
+// setup update request
+req := res.Update().SetInput(input)
+
+if err = req.Exec(ctx); err != nil {
+    return nil, parseRequestError(err, action{action: ActionUpdate, object: "{{ $entity | toLower}}"})
+}
+
+// grab preloads and set max result limits
+graphutils.GetPreloads(ctx, r.maxResultLimit)
+
+objectRes, err := withTransactionalMutation(ctx).{{ $entity }}.Query().Where({{ $entity | toLower}}.HasCommentsWith(note.ID(id))).Only(ctx)
+if err != nil {
+    return nil, parseRequestError(err, action{action: ActionUpdate, object: "{{ $entity | toLower}}"})
+}
+
+return &model.{{ $entity }}UpdatePayload{
+    {{ $entity }}: objectRes,
+}, nil
+{{ end }}
+
+{{ define "deletecomment" }}
+{{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
+
+if data == nil {
+    return nil
+}
+
+if err := withTransactionalMutation(ctx).{{ $entity }}.DeleteOneID(*data).Exec(ctx); err != nil {
+    return parseRequestError(err, action{action: ActionDelete, object: "{{ $entity | toLower }}"})
+}
+
+return nil
+{{ end }}

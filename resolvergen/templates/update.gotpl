@@ -1,47 +1,28 @@
 {{ reserveImport "github.com/theopenlane/utils/rout" }}
 {{ reserveImport "github.com/rs/zerolog/log" }}
 
-{{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
-{{ $isOrgOwned := .Field | hasOwnerField  -}}
-{{ $modelPackage := .ModelPackage | modelPackage -}}
+{{/* Include all custom fields */}}
+{{- if $.IncludeCustomUpdateFields }}
+	{{- if eq .Field.GoFieldName "RevisionBump" }}
+		{{ template "revisionBump" . }}
 
-{{- if eq .Field.GoFieldName "RevisionBump" }}
-	if data == nil {
-		return nil
-	}
+	{{- else if eq .Field.GoFieldName "AddComment" }}
+		{{ template "addcomment" . }}
 
-	models.WithVersionBumpRequestContext(ctx, data)
+	{{- else if isCommentUpdateOnObject .Field.GoFieldName }}
+		{{ template "updatecomment" . }}
 
-	return nil
+	{{- else if eq .Field.GoFieldName "DeleteComment" }}
+		{{ template "deletecomment" . }}
+
+	{{- else }}
+
+	{{ template "baseResolver" . }}
+
+	{{- end }}
+
 {{- else }}
+	{{/* Only include base resolver template */}}
 
-// grab preloads and set max result limits
-graphutils.GetPreloads(ctx, r.maxResultLimit)
-
-res, err := withTransactionalMutation(ctx).{{ $entity }}.Get(ctx, id)
-if err != nil {
-	return nil, parseRequestError(err, action{action: ActionUpdate, object: "{{ $entity | toLower }}"})
-}
-
-{{- if $isOrgOwned }}
-// set the organization in the auth context if its not done for us
-if err := setOrganizationInAuthContext(ctx, &res.OwnerID); err != nil {
-	log.Error().Err(err).Msg("failed to set organization in auth context")
-
-	return nil, rout.ErrPermissionDenied
-}
-{{- end }}
-
-// setup update request
-req := res.Update().SetInput(input){{- range $appendField := .AppendFields }}.{{ $appendField }}(input.{{ $appendField }}){{- end }}
-
-res, err = req.Save(ctx)
-if err != nil {
-	return nil, parseRequestError(err, action{action: ActionUpdate, object: "{{ $entity | toLower }}"})
-}
-
-return &{{ $modelPackage }}{{ $entity }}UpdatePayload{
-	{{ $entity }}: res,
-	}, nil
-
+	{{ template "baseResolver" . }}
 {{- end }}

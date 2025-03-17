@@ -14,7 +14,7 @@ import (
 	gqlast "github.com/vektah/gqlparser/v2/ast"
 )
 
-//go:embed templates/**.gotpl
+//go:embed templates/**.gotpl templates/**/**.gotpl
 var templates embed.FS
 
 // crudResolver is a struct to hold the field for the CRUD resolver
@@ -27,19 +27,29 @@ type crudResolver struct {
 	ModelPackage string
 	// EntImport is the ent import for the generated types
 	EntImport string
+	// IncludeCustomUpdateFields is a flag to include custom fields
+	IncludeCustomUpdateFields bool
 }
 
 // renderTemplate renders the template with the given name
-func renderTemplate(templateName string, input *crudResolver) string {
+func renderTemplate(templateName string, input *crudResolver, childTemplates []string) string {
+	patterns := []string{"templates/" + templateName}
+
+	for _, child := range childTemplates {
+		patterns = append(patterns, "templates/"+child)
+	}
+
 	t, err := template.New(templateName).Funcs(template.FuncMap{
-		"getEntityName": getEntityName,
-		"toLower":       strings.ToLower,
-		"toLowerCamel":  strcase.LowerCamelCase,
-		"hasArgument":   hasArgument,
-		"hasOwnerField": hasOwnerField,
-		"reserveImport": gqltemplates.CurrentImports.Reserve,
-		"modelPackage":  modelPackage,
-	}).ParseFS(templates, "templates/"+templateName)
+		"getEntityName":           getEntityName,
+		"getInputObjectName":      getInputObjectName,
+		"toLower":                 strings.ToLower,
+		"toLowerCamel":            strcase.LowerCamelCase,
+		"hasArgument":             hasArgument,
+		"hasOwnerField":           hasOwnerField,
+		"reserveImport":           gqltemplates.CurrentImports.Reserve,
+		"modelPackage":            modelPackage,
+		"isCommentUpdateOnObject": isCommentUpdateOnObject,
+	}).ParseFS(templates, patterns...)
 	if err != nil {
 		panic(err)
 	}
@@ -64,10 +74,11 @@ func modelPackage(modelPackage string) string {
 // renderCreate renders the create template
 func (r *ResolverPlugin) renderCreate(field *codegen.Field) string {
 	return renderTemplate("create.gotpl", &crudResolver{
-		Field:        field,
-		ModelPackage: r.modelPackage,
-		EntImport:    r.entGeneratedPackage,
-	})
+		Field:                     field,
+		ModelPackage:              r.modelPackage,
+		EntImport:                 r.entGeneratedPackage,
+		IncludeCustomUpdateFields: r.includeCustomFields,
+	}, []string{})
 }
 
 // renderUpdate renders the update template
@@ -75,22 +86,24 @@ func (r *ResolverPlugin) renderUpdate(field *codegen.Field) string {
 	appendFields := getAppendFields(field)
 
 	cr := &crudResolver{
-		Field:        field,
-		AppendFields: appendFields,
-		ModelPackage: r.modelPackage,
-		EntImport:    r.entGeneratedPackage,
+		Field:                     field,
+		AppendFields:              appendFields,
+		ModelPackage:              r.modelPackage,
+		EntImport:                 r.entGeneratedPackage,
+		IncludeCustomUpdateFields: r.includeCustomFields,
 	}
 
-	return renderTemplate("update.gotpl", cr)
+	return renderTemplate("update.gotpl", cr, []string{"updatefields/*.gotpl"})
 }
 
 // renderDelete renders the delete template
 func (r *ResolverPlugin) renderDelete(field *codegen.Field) string {
 	return renderTemplate("delete.gotpl", &crudResolver{
-		Field:        field,
-		ModelPackage: r.modelPackage,
-		EntImport:    r.entGeneratedPackage,
-	})
+		Field:                     field,
+		ModelPackage:              r.modelPackage,
+		EntImport:                 r.entGeneratedPackage,
+		IncludeCustomUpdateFields: r.includeCustomFields,
+	}, []string{"deletefields/*.gotpl"})
 }
 
 // renderBulkUpload renders the bulk upload template
@@ -99,7 +112,7 @@ func (r *ResolverPlugin) renderBulkUpload(field *codegen.Field) string {
 		Field:        field,
 		ModelPackage: r.modelPackage,
 		EntImport:    r.entGeneratedPackage,
-	})
+	}, []string{})
 }
 
 // renderBulk renders the bulk template
@@ -108,7 +121,7 @@ func (r *ResolverPlugin) renderBulk(field *codegen.Field) string {
 		Field:        field,
 		ModelPackage: r.modelPackage,
 		EntImport:    r.entGeneratedPackage,
-	})
+	}, []string{})
 }
 
 // renderQuery renders the query template
@@ -117,7 +130,7 @@ func (r *ResolverPlugin) renderQuery(field *codegen.Field) string {
 		Field:        field,
 		ModelPackage: r.modelPackage,
 		EntImport:    r.entGeneratedPackage,
-	})
+	}, []string{})
 }
 
 // renderList renders the list template
@@ -125,12 +138,13 @@ func (r *ResolverPlugin) renderList(field *codegen.Field) string {
 	return renderTemplate("list.gotpl", &crudResolver{
 		Field:     field,
 		EntImport: r.entGeneratedPackage,
-	})
+	}, []string{})
 }
 
 const (
 	CreateOperation  = "Create"
 	UpdateOperation  = "Update"
+	AddOperation     = "Add"
 	DeleteOperation  = "Delete"
 	InputObject      = "Input"
 	BulkOperation    = "Bulk"
@@ -173,6 +187,10 @@ func hasOwnerField(field *codegen.Field) bool {
 		// check the input of the create, instead of the update since its immutable
 		checkFieldName := strings.Replace(field.Name, "update", "create", 1)
 
+		// remove the Bulk and BulkCSV from fields
+		checkFieldName = strings.ReplaceAll(checkFieldName, BulkOperation, "")
+		checkFieldName = strings.ReplaceAll(checkFieldName, CSVOperation, "")
+
 		if field.Object.HasField(checkFieldName) {
 			for _, obj := range field.Object.Fields {
 				if obj.Name == checkFieldName {
@@ -212,4 +230,23 @@ func getAppendFields(field *codegen.Field) (appendFields []string) {
 	}
 
 	return
+}
+
+// isCommentUpdateOnObject checks if the field is of the format "Update<Something>Comment"
+func isCommentUpdateOnObject(field string) bool {
+	if strings.Contains(field, UpdateOperation) && strings.Contains(field, "Comment") {
+		return true
+	}
+
+	return false
+}
+
+// getInputObjectName returns the input object name by stripping the CRUD operation from the resolver name
+// for example UpdateTaskInput will return Task
+func getInputObjectName(objectName string) string {
+	// replace all operations
+	objectName = strings.ReplaceAll(objectName, CreateOperation, "")
+	objectName = strings.ReplaceAll(objectName, UpdateOperation, "")
+
+	return strings.ReplaceAll(objectName, InputObject, "")
 }

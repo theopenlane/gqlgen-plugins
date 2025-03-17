@@ -8,7 +8,7 @@
 // grab preloads and set max result limits
 graphutils.GetPreloads(ctx, r.maxResultLimit)
 
-{{- if $isOrgOwned }}
+{{ if $isOrgOwned }}
 // set the organization in the auth context if its not done for us
 if err := setOrganizationInAuthContext(ctx, input.OwnerID); err != nil {
 	log.Error().Err(err).Msg("failed to set organization in auth context")

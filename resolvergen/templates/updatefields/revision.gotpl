@@ -1,0 +1,9 @@
+{{ define "revisionBump" }}
+if data == nil {
+    return nil
+}
+
+models.WithVersionBumpRequestContext(ctx, data)
+
+return nil
+{{ end }}

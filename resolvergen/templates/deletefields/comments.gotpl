@@ -1,0 +1,11 @@
+{{ define "deletecomment" }}
+if data == nil {
+    return nil
+}
+
+if err := withTransactionalMutation(ctx).Note.DeleteOneID(*data).Exec(ctx); err != nil {
+    return parseRequestError(err, action{action: ActionDelete, object: "comment"})
+}
+
+return nil
+{{ end }}
