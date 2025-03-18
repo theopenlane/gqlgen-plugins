@@ -36,6 +36,8 @@ var resolverTemplate string
 type SearchPlugin struct {
 	// entGeneratedPackage is the ent generated package that holds the generated types
 	entGeneratedPackage string
+	// rulePackage is the package name for the privacy rules
+	rulePackage string
 	// modelPackage is the model package that holds the generated models for gql
 	modelPackage string
 	// idFields are the fields that are IDs and should be searched with equals instead of like
@@ -85,6 +87,14 @@ func WithEntGeneratedPackage(entPackage string) Options {
 	}
 }
 
+// WithRulePackage sets the privacy rule package for the gqlgen model
+// this is used to check for system admins
+func WithRulePackage(pkg string) Options {
+	return func(p *SearchPlugin) {
+		p.rulePackage = pkg
+	}
+}
+
 // WithIDFields sets the fields that are searchable by ID to be used as equal operations instead of like
 func WithIDFields(fields []string) Options {
 	return func(p *SearchPlugin) {
@@ -107,6 +117,8 @@ type SearchResolverBuild struct {
 	Objects []Object
 	// EntImport is the ent generated package that holds the generated types
 	EntImport string
+	// RuleImport is the package name for the privacy rules
+	RuleImport string
 	// ModelImport is the package name for the gqlgen model
 	ModelImport string
 	// ModelPackage is the package name for the gqlgen model
@@ -148,6 +160,7 @@ func (r SearchPlugin) GenerateCode(data *codegen.Data) error {
 
 	// add the generated package name
 	inputData.EntImport = r.entGeneratedPackage
+	inputData.RuleImport = r.rulePackage
 
 	// set the max results
 	inputData.MaxResults = r.maxResults

@@ -6,6 +6,10 @@
 {{ reserveImport $.EntImport }}
 {{- end }}
 
+{{- if $.RuleImport }}
+{{ reserveImport $.RuleImport }}
+{{- end }}
+
 {{- if $.ModelImport }}
 {{ reserveImport $.ModelImport }}
 {{- end }}
@@ -17,6 +21,13 @@
 func (r *queryResolver) Search(ctx context.Context, query string) (*{{ .ModelPackage }}SearchResultConnection, error) {
 {{- else }}
 func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string) (*{{ .ModelPackage }}SearchResultConnection, error) {
+	{{- if $.RuleImport }}
+	// ensure the user is a system admin
+	isAdmin, err := rule.CheckIsSystemAdminWithContext(ctx)
+	if err != nil || !isAdmin {
+		return nil, generated.ErrPermissionDenied
+	}
+	{{- end }}
 {{- end }}
 	if len(query) < 3 {
 		return nil, ErrSearchQueryTooShort
@@ -73,6 +84,14 @@ func (r *queryResolver) {{ $object.Name }}Search(ctx context.Context, query stri
 	{{ $object.Name | toLower }}Results, err := search{{ $object.Name | toPlural }}(ctx, query)
 {{- else }}
 func (r *queryResolver) Admin{{ $object.Name }}Search(ctx context.Context, query string) (*{{$root.ModelPackage}}{{ $object.Name }}SearchResult, error) {
+		{{- if $.RuleImport }}
+		// ensure the user is a system admin
+		isAdmin, err := rule.CheckIsSystemAdminWithContext(ctx)
+		if err != nil || !isAdmin {
+			return nil, generated.ErrPermissionDenied
+		}
+		{{- end }}
+
 		{{ $object.Name | toLower }}Results, err := adminSearch{{ $object.Name | toPlural }}(ctx, query)
 {{- end}}
 
