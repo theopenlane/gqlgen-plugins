@@ -43,7 +43,7 @@ func search{{ $object.Name | toPlural }}(ctx context.Context, query string) ([]*
 					)
 					{{- else }}
 						likeQuery := "%" + query + "%"
-						s.Where(sql.ExprP("({{ $field.Name | toLower }})::text LIKE ${{ add $i 1 }}", likeQuery)) // search by {{ $field.Name }}
+						s.Where(sql.ExprP("({{ $field.Name | toSnakeCase }})::text LIKE ${{ add $i 1 }}", likeQuery)) // search by {{ $field.Name }}
 					{{- end }}
 					},
 					{{- else if eq $field.Type "int" }}}
@@ -80,7 +80,7 @@ func adminSearch{{ $object.Name | toPlural }}(ctx context.Context, query string)
 					)
 					{{- else }}
 						likeQuery := "%" + query + "%"
-						s.Where(sql.ExprP("({{ $field.Name | toLower }})::text LIKE ${{ add $i 1 }}", likeQuery)) // search by {{ $field.Name }}
+						s.Where(sql.ExprP("({{ $field.Name | toSnakeCase }})::text LIKE ${{ add $i 1 }}", likeQuery)) // search by {{ $field.Name }}
 					{{- end }}
 					},
 					{{- else if eq $field.Type "int" }}}
