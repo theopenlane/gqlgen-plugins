@@ -21,12 +21,10 @@ const (
 // ResolverPlugin is a gqlgen plugin to generate resolver functions
 type ResolverPlugin struct {
 	*resolvergen.Plugin
-
+	// modelPackage is the model package that holds the generated models for gql
 	modelPackage string
-
 	// entGeneratedPackage is the ent generated package that holds the generated types
 	entGeneratedPackage string
-
 	// includeCustomFields includes custom resolver fields for updates, templates
 	// are stored in `templates/updatefields/*.gotpl`, `templates/deletefields/*.gotpl`
 	// defaults to true
