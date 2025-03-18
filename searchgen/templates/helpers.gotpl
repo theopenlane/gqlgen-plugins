@@ -25,71 +25,75 @@ type searchResult[T any] struct {
 {{- range $object := $.Objects }}
 // search{{ $object.Name  }} searches for {{ $object.Name  }} based on the query string looking for matches
 func search{{ $object.Name | toPlural }}(ctx context.Context, query string) ([]*generated.{{ $object.Name }}, error) {
-	return withTransactionalMutation(ctx).{{ $object.Name  }}.Query().Where(
-		{{ $object.Name  | toLower }}.Or(
-			{{- range $i, $field := $object.Fields }}
-				{{- if isIDField $field.Name $.IDFields }}
-				{{ $object.Name | toLower }}.{{ $field.Name }}(query), // search equal to {{ $field.Name }}
-				{{- else if eq $field.Type "json.RawMessage" }}
-				func(s *sql.Selector) {
-				{{- if ne $field.Path "" }}
-				s.Where(
-					sqljson.StringContains({{ $object.Name | toLower }}.Field{{ $field.Name }}, query,sqljson.Path("{{ $field.Path }}")), // search by {{ $field.Name }} at {{ $field.Path }}
-				)
-				{{- else if ne $field.DotPath "" }}
-				s.Where(
-					sqljson.StringContains({{ $object.Name | toLower }}.Field{{ $field.Name }}, query,sqljson.DotPath("{{ $field.DotPath }}")), // search by {{ $field.Name }} at {{ $field.DotPath }}
-				)
-				{{- else }}
-					likeQuery := "%" + query + "%"
-					s.Where(sql.ExprP("({{ $field.Name | toLower }})::text LIKE ${{ add $i 1 }}", likeQuery)) // search by {{ $field.Name }}
+	return withTransactionalMutation(ctx).{{ $object.Name  }}.Query().
+		Where(
+			{{ $object.Name  | toLower }}.Or(
+				{{- range $i, $field := $object.Fields }}
+					{{- if isIDField $field.Name $.IDFields }}
+					{{ $object.Name | toLower }}.{{ $field.Name }}(query), // search equal to {{ $field.Name }}
+					{{- else if eq $field.Type "json.RawMessage" }}
+					func(s *sql.Selector) {
+					{{- if ne $field.Path "" }}
+					s.Where(
+						sqljson.StringContains({{ $object.Name | toLower }}.Field{{ $field.Name }}, query,sqljson.Path("{{ $field.Path }}")), // search by {{ $field.Name }} at {{ $field.Path }}
+					)
+					{{- else if ne $field.DotPath "" }}
+					s.Where(
+						sqljson.StringContains({{ $object.Name | toLower }}.Field{{ $field.Name }}, query,sqljson.DotPath("{{ $field.DotPath }}")), // search by {{ $field.Name }} at {{ $field.DotPath }}
+					)
+					{{- else }}
+						likeQuery := "%" + query + "%"
+						s.Where(sql.ExprP("({{ $field.Name | toLower }})::text LIKE ${{ add $i 1 }}", likeQuery)) // search by {{ $field.Name }}
+					{{- end }}
+					},
+					{{- else if eq $field.Type "int" }}}
+					{{ $object.Name | toLower }}.{{ $field.Name }}(query), // search equal to {{ $field.Name }}
+					{{- else }}
+					{{ $object.Name | toLower }}.{{ $field.Name }}ContainsFold(query), // search by {{ $field.Name }}
+					{{- end }}
 				{{- end }}
-				},
-				{{- else if eq $field.Type "int" }}}
-				{{ $object.Name | toLower }}.{{ $field.Name }}(query), // search equal to {{ $field.Name }}
-				{{- else }}
-				{{ $object.Name | toLower }}.{{ $field.Name }}ContainsFold(query), // search by {{ $field.Name }}
-				{{- end }}
-			{{- end }}
-		),
-	{{- if gt $.MaxResults 0 }}
-	).Limit({{ $.MaxResults }}
-	{{- end }}
-	).All(ctx)
+			),
+		).
+		{{- if gt $.MaxResults 0 }}
+		Limit({{ $.MaxResults }}).
+		{{- end }}
+		All(ctx)
 }
 
 // search{{ $object.Name  }} searches for {{ $object.Name  }} based on the query string looking for matches
 func adminSearch{{ $object.Name | toPlural }}(ctx context.Context, query string) ([]*generated.{{ $object.Name }}, error) {
-	return withTransactionalMutation(ctx).{{ $object.Name  }}.Query().Where(
-		{{ $object.Name  | toLower }}.Or(
-			{{- range $i, $field := $object.AdminFields }}
-				{{- if isIDField $field.Name $.IDFields }}
-				{{ $object.Name | toLower }}.{{ $field.Name }}(query), // search equal to {{ $field.Name }}
-				{{- else if eq $field.Type "json.RawMessage" }}
-				func(s *sql.Selector) {
-				{{- if ne $field.Path "" }}
-				s.Where(
-					sqljson.StringContains({{ $object.Name | toLower }}.Field{{ $field.Name }}, query,sqljson.Path("{{ $field.Path }}")), // search by {{ $field.Name }} at {{ $field.Path }}
-				)
-				{{- else if ne $field.DotPath "" }}
-				s.Where(
-					sqljson.StringContains({{ $object.Name | toLower }}.Field{{ $field.Name }}, query,sqljson.DotPath("{{ $field.DotPath }}")), // search by {{ $field.Name }} at {{ $field.DotPath }}
-				)
-				{{- else }}
-					likeQuery := "%" + query + "%"
-					s.Where(sql.ExprP("({{ $field.Name | toLower }})::text LIKE ${{ add $i 1 }}", likeQuery)) // search by {{ $field.Name }}
+	return withTransactionalMutation(ctx).{{ $object.Name  }}.Query().
+		Where(
+			{{ $object.Name  | toLower }}.Or(
+				{{- range $i, $field := $object.AdminFields }}
+					{{- if isIDField $field.Name $.IDFields }}
+					{{ $object.Name | toLower }}.{{ $field.Name }}(query), // search equal to {{ $field.Name }}
+					{{- else if eq $field.Type "json.RawMessage" }}
+					func(s *sql.Selector) {
+					{{- if ne $field.Path "" }}
+					s.Where(
+						sqljson.StringContains({{ $object.Name | toLower }}.Field{{ $field.Name }}, query,sqljson.Path("{{ $field.Path }}")), // search by {{ $field.Name }} at {{ $field.Path }}
+					)
+					{{- else if ne $field.DotPath "" }}
+					s.Where(
+						sqljson.StringContains({{ $object.Name | toLower }}.Field{{ $field.Name }}, query,sqljson.DotPath("{{ $field.DotPath }}")), // search by {{ $field.Name }} at {{ $field.DotPath }}
+					)
+					{{- else }}
+						likeQuery := "%" + query + "%"
+						s.Where(sql.ExprP("({{ $field.Name | toLower }})::text LIKE ${{ add $i 1 }}", likeQuery)) // search by {{ $field.Name }}
+					{{- end }}
+					},
+					{{- else if eq $field.Type "int" }}}
+					{{ $object.Name | toLower }}.{{ $field.Name }}(query), // search equal to {{ $field.Name }}
+					{{- else }}
+					{{ $object.Name | toLower }}.{{ $field.Name }}ContainsFold(query), // search by {{ $field.Name }}
+					{{- end }}
 				{{- end }}
-				},
-				{{- else if eq $field.Type "int" }}}
-				{{ $object.Name | toLower }}.{{ $field.Name }}(query), // search equal to {{ $field.Name }}
-				{{- else }}
-				{{ $object.Name | toLower }}.{{ $field.Name }}ContainsFold(query), // search by {{ $field.Name }}
-				{{- end }}
-			{{- end }}
-		),
-	{{- if gt $.MaxResults 0 }}
-	).Limit({{ $.MaxResults }}
-	{{- end }}
-	).All(ctx)
+			),
+		).
+		{{- if gt $.MaxResults 0 }}
+		Limit({{ $.MaxResults }}).
+		{{- end }}
+		All(ctx)
 }
 {{ end }}
