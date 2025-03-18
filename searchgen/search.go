@@ -33,11 +33,15 @@ var resolverTemplate string
 
 // SearchPlugin is a gqlgen plugin to generate search functions
 type SearchPlugin struct {
-	EntGeneratedPackage string
-	ModelPackage        string
-	// IDFields are the fields that are IDs and should be searched with equals instead of like
+	// entGeneratedPackage is the ent generated package that holds the generated types
+	entGeneratedPackage string
+	// modelPackage is the model package that holds the generated models for gql
+	modelPackage string
+	// idFields are the fields that are IDs and should be searched with equals instead of like
 	// defaults to ID, DisplayID
-	IDFields []string
+	idFields []string
+	// maxResults is the maximum number of results to return for a search for each type
+	maxResults int
 }
 
 // Name returns the name of the plugin
@@ -48,7 +52,7 @@ func (r SearchPlugin) Name() string {
 // NewSearchPlugin returns a new search plugin
 func New(entPackage string) *SearchPlugin {
 	return &SearchPlugin{
-		EntGeneratedPackage: entPackage,
+		entGeneratedPackage: entPackage,
 	}
 }
 
@@ -69,21 +73,28 @@ func NewWithOptions(opts ...Options) *SearchPlugin {
 // WithModelPackage sets the model package for the gqlgen model
 func WithModelPackage(modelPackage string) Options {
 	return func(p *SearchPlugin) {
-		p.ModelPackage = modelPackage
+		p.modelPackage = modelPackage
 	}
 }
 
 // WithEntGeneratedPackage sets the ent generated package for the gqlgen model
 func WithEntGeneratedPackage(entPackage string) Options {
 	return func(p *SearchPlugin) {
-		p.EntGeneratedPackage = entPackage
+		p.entGeneratedPackage = entPackage
 	}
 }
 
 // WithIDFields sets the fields that are searchable by ID to be used as equal operations instead of like
 func WithIDFields(fields []string) Options {
 	return func(p *SearchPlugin) {
-		p.IDFields = fields
+		p.idFields = fields
+	}
+}
+
+// WithMaxResults sets the maximum number of results to return for a search for each type
+func WithMaxResults(maxResults int) Options {
+	return func(p *SearchPlugin) {
+		p.maxResults = maxResults
 	}
 }
 
@@ -101,6 +112,8 @@ type SearchResolverBuild struct {
 	ModelPackage string
 	// IDFields are the fields that are IDs and should be searched with equals instead of like
 	IDFields []string
+	// MaxResults is the maximum number of results to return for a search for each type
+	MaxResults int
 }
 
 // Object is a struct to hold the object name for the bulk resolver
@@ -120,10 +133,10 @@ func (r SearchPlugin) GenerateCode(data *codegen.Data) error {
 		return err
 	}
 
-	inputData.ModelImport = r.ModelPackage
+	inputData.ModelImport = r.modelPackage
 
 	// only add the model package if the import is not empty
-	if r.ModelPackage != "" {
+	if r.modelPackage != "" {
 		modelPkg := data.Config.Model.Package
 		if modelPkg != "" {
 			modelPkg += "."
@@ -133,12 +146,15 @@ func (r SearchPlugin) GenerateCode(data *codegen.Data) error {
 	}
 
 	// add the generated package name
-	inputData.EntImport = r.EntGeneratedPackage
+	inputData.EntImport = r.entGeneratedPackage
+
+	// set the max results
+	inputData.MaxResults = r.maxResults
 
 	// set the default ID fields
 	inputData.IDFields = defaultIDFields
-	if r.IDFields != nil {
-		inputData.IDFields = r.IDFields
+	if r.idFields != nil {
+		inputData.IDFields = r.idFields
 	}
 
 	// generate the search helper

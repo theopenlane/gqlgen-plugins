@@ -52,6 +52,9 @@ func search{{ $object.Name | toPlural }}(ctx context.Context, query string) ([]*
 				{{- end }}
 			{{- end }}
 		),
+	{{- if gt $.MaxResults 0 }}
+	).Limit({{ $.MaxResults }}
+	{{- end }}
 	).All(ctx)
 }
 
@@ -84,6 +87,9 @@ func adminSearch{{ $object.Name | toPlural }}(ctx context.Context, query string)
 				{{- end }}
 			{{- end }}
 		),
+	{{- if gt $.MaxResults 0 }}
+	).Limit({{ $.MaxResults }}
+	{{- end }}
 	).All(ctx)
 }
 {{ end }}
