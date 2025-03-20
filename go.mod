@@ -11,7 +11,7 @@ require (
 	github.com/samber/lo v1.49.1
 	github.com/stoewer/go-strcase v1.3.0
 	github.com/stretchr/testify v1.10.0
-	github.com/theopenlane/entx v0.5.0
+	github.com/theopenlane/entx v0.5.1
 	github.com/vektah/gqlparser/v2 v2.5.23
 )
 
@@ -34,7 +34,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect
-	github.com/theopenlane/utils v0.4.3 // indirect
+	github.com/theopenlane/utils v0.4.4 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/zclconf/go-cty v1.15.0 // indirect
