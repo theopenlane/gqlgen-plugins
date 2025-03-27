@@ -8,6 +8,9 @@
 {{ $hasOrderBy := hasArgument "orderBy" .Field.FieldDefinition.Arguments }}
 {{ $hasWhere := hasArgument "where" .Field.FieldDefinition.Arguments }}
 
+// grab preloads to set max result limits
+graphutils.GetPreloads(ctx, r.maxResultLimit)
+
 {{ if and $hasFirst $hasLast }}
 // set page limit if nothing was set
 first, last = graphutils.SetFirstLastDefaults(first, last, r.maxResultLimit)
