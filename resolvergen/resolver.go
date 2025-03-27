@@ -103,17 +103,17 @@ func (r *ResolverPlugin) GenerateCode(data *codegen.Data) error {
 
 // isMutation returns true if the field is a mutation
 func isMutation(f *codegen.Field) bool {
-	return strings.EqualFold(f.Object.Definition.Name, string(ast.Mutation))
+	return strings.EqualFold(f.Object.Name, string(ast.Mutation))
 }
 
 // isQuery returns true if the field is a query
 func isQuery(f *codegen.Field) bool {
-	return strings.EqualFold(f.Object.Definition.Name, string(ast.Query))
+	return strings.EqualFold(f.Object.Name, string(ast.Query))
 }
 
 // isQuery returns true if the field is a query
 func isInput(f *codegen.Field) bool {
-	return strings.Contains(f.Object.Definition.Name, "Input")
+	return strings.Contains(f.Object.Name, "Input")
 }
 
 // mutationImplementer returns the implementation for the mutation

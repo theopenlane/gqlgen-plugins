@@ -8,15 +8,12 @@
 {{ $hasOrderBy := hasArgument "orderBy" .Field.FieldDefinition.Arguments }}
 {{ $hasWhere := hasArgument "where" .Field.FieldDefinition.Arguments }}
 
-// determine all fields that were requested
-preloads := graphutils.GetPreloads(ctx, r.maxResultLimit)
-
 {{ if and $hasFirst $hasLast }}
 // set page limit if nothing was set
 first, last = graphutils.SetFirstLastDefaults(first, last, r.maxResultLimit)
 {{- end }}
 
-query, err :=  withTransactionalMutation(ctx).{{ $entity }}.Query().CollectFields(ctx, preloads...)
+query, err :=  withTransactionalMutation(ctx).{{ $entity }}.Query().CollectFields(ctx)
 if err != nil {
 	return nil, parseRequestError(err, action{action: ActionGet, object: "{{ $entity | toLower }}"})
 }

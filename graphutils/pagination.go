@@ -15,7 +15,7 @@ func setDefaultPaginationLimit(column *graphql.CollectedField, maxPageSize *int)
 	}
 
 	// make sure the args are there on the field
-	first := column.Field.Definition.Arguments.ForName(firstArg)
+	first := column.Definition.Arguments.ForName(firstArg)
 	if first != nil {
 		// check to see if they are set as the arguments
 		first := column.Arguments.ForName(firstArg)

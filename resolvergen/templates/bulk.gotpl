@@ -15,7 +15,4 @@ if err := setOrganizationInAuthContextBulkRequest(ctx, input); err != nil {
 }
 {{- end }}
 
-// grab preloads and set max result limits
-graphutils.GetPreloads(ctx, r.maxResultLimit)
-
 return r.bulkCreate{{ $entity }}(ctx, input)
