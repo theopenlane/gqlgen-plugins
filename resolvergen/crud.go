@@ -183,19 +183,19 @@ func hasArgument(arg string, args gqlast.ArgumentDefinitionList) bool {
 func hasOwnerField(field *codegen.Field) bool {
 	if crudType(field) == CreateOperation {
 		return argsHasOwnerID(field.Args)
-	} else {
-		// check the input of the create, instead of the update since its immutable
-		checkFieldName := strings.Replace(field.Name, "update", "create", 1)
+	}
 
-		// remove the Bulk and BulkCSV from fields
-		checkFieldName = strings.ReplaceAll(checkFieldName, BulkOperation, "")
-		checkFieldName = strings.ReplaceAll(checkFieldName, CSVOperation, "")
+	// check the input of the create, instead of the update since its immutable
+	checkFieldName := strings.Replace(field.Name, "update", "create", 1)
 
-		if field.Object.HasField(checkFieldName) {
-			for _, obj := range field.Object.Fields {
-				if obj.Name == checkFieldName {
-					return argsHasOwnerID(obj.Args)
-				}
+	// remove the Bulk and BulkCSV from fields
+	checkFieldName = strings.ReplaceAll(checkFieldName, BulkOperation, "")
+	checkFieldName = strings.ReplaceAll(checkFieldName, CSVOperation, "")
+
+	if field.Object.HasField(checkFieldName) {
+		for _, obj := range field.Object.Fields {
+			if obj.Name == checkFieldName {
+				return argsHasOwnerID(obj.Args)
 			}
 		}
 	}

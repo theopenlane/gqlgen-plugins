@@ -3,7 +3,7 @@
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 {{ $isOrgOwned := .Field | hasOwnerField  -}}
 
-// grab preloads and set max result limits
+// grab preloads to set max result limits
 graphutils.GetPreloads(ctx, r.maxResultLimit)
 
 data, err := unmarshalBulkData[generated.Create{{ $entity }}Input](input)

@@ -5,7 +5,7 @@
 {{ $isOrgOwned := .Field | hasOwnerField  -}}
 {{ $modelPackage := .ModelPackage | modelPackage -}}
 
-// grab preloads and set max result limits
+// grab preloads to set max result limits
 graphutils.GetPreloads(ctx, r.maxResultLimit)
 
 {{ if $isOrgOwned }}

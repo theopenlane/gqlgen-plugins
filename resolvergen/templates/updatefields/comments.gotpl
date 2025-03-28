@@ -45,7 +45,7 @@ if err = req.Exec(ctx); err != nil {
     return nil, parseRequestError(err, action{action: ActionUpdate, object: "{{ $entity | toLower}}"})
 }
 
-// grab preloads and set max result limits
+// grab preloads to set max result limits
 graphutils.GetPreloads(ctx, r.maxResultLimit)
 
 objectRes, err := withTransactionalMutation(ctx).{{ $entity }}.Query().Where({{ $entity | toLower}}.HasCommentsWith(note.ID(id))).Only(ctx)
