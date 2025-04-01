@@ -22,8 +22,6 @@ return res, nil
 {{ $import := print $.EntImport "/" $entity | toLower }}
 {{ reserveImport $import}}
 
-graphutils.GetPreloads(ctx, r.maxResultLimit)
-
 query, err := withTransactionalMutation(ctx).{{ $entity }}.Query().Where({{ $entity | toLower }}.ID(id)).CollectFields(ctx)
 if err != nil {
 	return nil, parseRequestError(err, action{action: ActionGet, object: "{{ $entity | toLower }}"})
