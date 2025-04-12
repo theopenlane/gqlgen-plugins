@@ -1,6 +1,8 @@
-{{ reserveImport "context" }}
+{{- reserveImport "context" }}
 
-{{ reserveImport "github.com/rs/zerolog/log" }}
+{{- reserveImport "github.com/rs/zerolog/log" }}
+{{- reserveImport "entgo.io/contrib/entgql" }}
+{{- reserveImport "github.com/theopenlane/gqlgen-plugins/graphutils" }}
 
 {{- if $.EntImport }}
 {{ reserveImport $.EntImport }}
@@ -18,9 +20,9 @@
 
 // Search is the resolver for the search field.
 {{- if eq $.Name "Global" }}
-func (r *queryResolver) Search(ctx context.Context, query string) (*{{ .ModelPackage }}SearchResultConnection, error) {
+func (r *queryResolver) Search(ctx context.Context, query string, after *entgql.Cursor[string], first *int, before *entgql.Cursor[string], last *int) (*{{ .ModelPackage }}SearchResults, error) {
 {{- else }}
-func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string) (*{{ .ModelPackage }}SearchResultConnection, error) {
+func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string, after *entgql.Cursor[string], first *int, before *entgql.Cursor[string], last *int) (*{{ .ModelPackage }}SearchResults, error) {
 	{{- if $.RuleImport }}
 	// ensure the user is a system admin
 	isAdmin, err := rule.CheckIsSystemAdminWithContext(ctx)
@@ -33,10 +35,12 @@ func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string) (*
 		return nil, ErrSearchQueryTooShort
 	}
 
+	first, last = graphutils.SetFirstLastDefaults(first, last, r.maxResultLimit)
+
 	var (
 		errors []error
         {{- range $object := $.Objects }}
-		{{ $object.Name | toLower }}Results []*generated.{{ $object.Name }}
+		{{ $object.Name | toLower }}Results *generated.{{ $object.Name }}Connection
         {{- end }}
 	)
 
@@ -44,7 +48,7 @@ func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string) (*
         {{- range $object := $.Objects }}
 		func() {
 			var err error
-			{{ $object.Name | toLower }}Results, err = search{{ $object.Name | toPlural }}(ctx, query)
+			{{ $object.Name | toLower }}Results, err = search{{ $object.Name | toPlural }}(ctx, query, after, first, before, last)
 			if err != nil {
 				errors = append(errors, err)
 			}
@@ -58,32 +62,29 @@ func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string) (*
 	}
 
 	// return the results
-	var nodes []model.SearchResult
 	resultCount := 0
+	res := &{{ .ModelPackage }}SearchResults{
+		TotalCount: resultCount,
+	}
 
 	{{- range $object := $.Objects }}
-	if len({{ $object.Name | toLower }}Results) > 0 {
-		nodes = append(nodes, {{$root.ModelPackage}}{{ $object.Name }}SearchResult{
-			{{ $object.Name | toPlural }}: {{ $object.Name | toLower }}Results,
-		})
+	if len({{ $object.Name | toLower }}Results.Edges) > 0 {
+		res.{{ $object.Name | toPlural }} = {{ $object.Name | toLower }}Results
 
-		resultCount += len({{ $object.Name | toLower }}Results)
+		resultCount += len({{ $object.Name | toLower }}Results.Edges)
 	}
 	{{- end }}
 
-	return &model.SearchResultConnection{
-		TotalCount: resultCount,
-		Nodes: nodes,
-	}, nil
+	return res, nil
 }
 
 {{- range $object := $.Objects }}
 
 {{- if eq $.Name "Global" }}
-func (r *queryResolver) {{ $object.Name }}Search(ctx context.Context, query string) (*{{$root.ModelPackage}}{{ $object.Name }}SearchResult, error) {
-	{{ $object.Name | toLower }}Results, err := search{{ $object.Name | toPlural }}(ctx, query)
+func (r *queryResolver) {{ $object.Name }}Search(ctx context.Context, query string, after *entgql.Cursor[string], first *int, before *entgql.Cursor[string], last *int) (*generated.{{ $object.Name }}Connection, error) {
+	{{ $object.Name | toLower }}Results, err := search{{ $object.Name | toPlural }}(ctx, query, after, first, before, last)
 {{- else }}
-func (r *queryResolver) Admin{{ $object.Name }}Search(ctx context.Context, query string) (*{{$root.ModelPackage}}{{ $object.Name }}SearchResult, error) {
+func (r *queryResolver) Admin{{ $object.Name }}Search(ctx context.Context, query string, after *entgql.Cursor[string], first *int, before *entgql.Cursor[string], last *int) (*generated.{{ $object.Name }}Connection, error) {
 		{{- if $.RuleImport }}
 		// ensure the user is a system admin
 		isAdmin, err := rule.CheckIsSystemAdminWithContext(ctx)
@@ -92,7 +93,9 @@ func (r *queryResolver) Admin{{ $object.Name }}Search(ctx context.Context, query
 		}
 		{{- end }}
 
-		{{ $object.Name | toLower }}Results, err := adminSearch{{ $object.Name | toPlural }}(ctx, query)
+		first, last = graphutils.SetFirstLastDefaults(first, last, r.maxResultLimit)
+
+		{{ $object.Name | toLower }}Results, err := adminSearch{{ $object.Name | toPlural }}(ctx, query, after, first, before, last)
 {{- end}}
 
 	if err != nil {
@@ -100,8 +103,6 @@ func (r *queryResolver) Admin{{ $object.Name }}Search(ctx context.Context, query
 	}
 
 	// return the results
-	return &{{$root.ModelPackage}}{{ $object.Name }}SearchResult{
-		{{ $object.Name | toPlural }}: {{ $object.Name | toLower }}Results,
-	}, nil
+	return {{ $object.Name | toLower }}Results, nil
 }
 {{- end }}
