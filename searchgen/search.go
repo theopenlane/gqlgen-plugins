@@ -258,16 +258,16 @@ func isIDField(f string, idFields []string) bool {
 // if there is only one field, we don't add the entry, this is just the ID field
 func isSearchableObject(fields []genhooks.Field) bool {
 	switch {
-	case len(fields) > 2: // check if there are more than 2 fields, then we can add the entry because we can guarantee that there is at least one searchable field
+	// check if there are more than 2 fields, then we can add the entry because we can guarantee that there is at least one searchable field
+	case len(fields) > 2: //nolint:mnd
 		return true
-	case len(fields) == 2:
+	case len(fields) == 2: //nolint:mnd
 		// check if the only fields are ID and DisplayID
 		for _, field := range fields {
 			if !strings.EqualFold(field.Name, "ID") && !strings.EqualFold(field.Name, "DisplayID") {
 				return true
 			}
 		}
-
 	}
 
 	return false
