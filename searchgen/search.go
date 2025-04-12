@@ -43,8 +43,6 @@ type SearchPlugin struct {
 	// idFields are the fields that are IDs and should be searched with equals instead of like
 	// defaults to ID, DisplayID
 	idFields []string
-	// maxResults is the maximum number of results to return for a search for each type
-	maxResults int
 }
 
 // Name returns the name of the plugin
@@ -102,13 +100,6 @@ func WithIDFields(fields []string) Options {
 	}
 }
 
-// WithMaxResults sets the maximum number of results to return for a search for each type
-func WithMaxResults(maxResults int) Options {
-	return func(p *SearchPlugin) {
-		p.maxResults = maxResults
-	}
-}
-
 // SearchResolverBuild is a struct to hold the objects for the bulk resolver
 type SearchResolverBuild struct {
 	// Name of the search type
@@ -125,8 +116,6 @@ type SearchResolverBuild struct {
 	ModelPackage string
 	// IDFields are the fields that are IDs and should be searched with equals instead of like
 	IDFields []string
-	// MaxResults is the maximum number of results to return for a search for each type
-	MaxResults int
 }
 
 // Object is a struct to hold the object name for the bulk resolver
@@ -161,9 +150,6 @@ func (r SearchPlugin) GenerateCode(data *codegen.Data) error {
 	// add the generated package name
 	inputData.EntImport = r.entGeneratedPackage
 	inputData.RuleImport = r.rulePackage
-
-	// set the max results
-	inputData.MaxResults = r.maxResults
 
 	// set the default ID fields
 	inputData.IDFields = defaultIDFields
