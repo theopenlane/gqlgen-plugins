@@ -62,16 +62,15 @@ func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string, af
 	}
 
 	// return the results
-	resultCount := 0
 	res := &{{ .ModelPackage }}SearchResults{
-		TotalCount: resultCount,
+		TotalCount: 0,
 	}
 
 	{{- range $object := $.Objects }}
-	if len({{ $object.Name | toLower }}Results.Edges) > 0 {
+	if {{ $object.Name | toLower }}Results != nil && len({{ $object.Name | toLower }}Results.Edges) > 0 {
 		res.{{ $object.Name | toPlural }} = {{ $object.Name | toLower }}Results
 
-		resultCount += len({{ $object.Name | toLower }}Results.Edges)
+		res.TotalCount += {{ $object.Name | toLower }}Results.TotalCount
 	}
 	{{- end }}
 
