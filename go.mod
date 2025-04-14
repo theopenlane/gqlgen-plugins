@@ -11,13 +11,13 @@ require (
 	github.com/samber/lo v1.49.1
 	github.com/stoewer/go-strcase v1.3.0
 	github.com/stretchr/testify v1.10.0
-	github.com/theopenlane/entx v0.5.1
+	github.com/theopenlane/entx v0.6.1
 	github.com/vektah/gqlparser/v2 v2.5.24
 )
 
 require (
 	ariga.io/atlas v0.31.1-0.20250212144724-069be8033e83 // indirect
-	github.com/XSAM/otelsql v0.37.0 // indirect
+	github.com/XSAM/otelsql v0.38.0 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
