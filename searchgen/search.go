@@ -43,8 +43,6 @@ type SearchPlugin struct {
 	// idFields are the fields that are IDs and should be searched with equals instead of like
 	// defaults to ID, DisplayID
 	idFields []string
-	// maxResults is the maximum number of results to return for a search for each type
-	maxResults int
 }
 
 // Name returns the name of the plugin
@@ -102,13 +100,6 @@ func WithIDFields(fields []string) Options {
 	}
 }
 
-// WithMaxResults sets the maximum number of results to return for a search for each type
-func WithMaxResults(maxResults int) Options {
-	return func(p *SearchPlugin) {
-		p.maxResults = maxResults
-	}
-}
-
 // SearchResolverBuild is a struct to hold the objects for the bulk resolver
 type SearchResolverBuild struct {
 	// Name of the search type
@@ -125,8 +116,6 @@ type SearchResolverBuild struct {
 	ModelPackage string
 	// IDFields are the fields that are IDs and should be searched with equals instead of like
 	IDFields []string
-	// MaxResults is the maximum number of results to return for a search for each type
-	MaxResults int
 }
 
 // Object is a struct to hold the object name for the bulk resolver
@@ -161,9 +150,6 @@ func (r SearchPlugin) GenerateCode(data *codegen.Data) error {
 	// add the generated package name
 	inputData.EntImport = r.entGeneratedPackage
 	inputData.RuleImport = r.rulePackage
-
-	// set the max results
-	inputData.MaxResults = r.maxResults
 
 	// set the default ID fields
 	inputData.IDFields = defaultIDFields
@@ -200,13 +186,12 @@ func getInputData(data *codegen.Data) (SearchResolverBuild, error) {
 
 	for _, f := range data.Schema.Types {
 		// Add the search fields
-		if strings.Contains(f.Name, "Search") && !strings.Contains(f.Name, "GlobalSearch") {
-			schemaName := strings.TrimSuffix(f.Name, "SearchResult")
-			fields, adminFields := genhooks.GetSearchableFields(schemaName, graph)
+		if !strings.Contains(f.Name, "History") {
+			fields, adminFields := genhooks.GetSearchableFields(f.Name, graph)
 
-			if len(fields) > 0 {
+			if isSearchableObject(fields) {
 				inputData.Objects = append(inputData.Objects, Object{
-					Name:        schemaName,
+					Name:        f.Name,
 					Fields:      fields,      // add the fields that are being searched
 					AdminFields: adminFields, // add the admin fields that are being searched
 				})
@@ -261,6 +246,27 @@ func isIDField(f string, idFields []string) bool {
 	for _, idField := range idFields {
 		if f == idField {
 			return true
+		}
+	}
+
+	return false
+}
+
+// isSearchableObject checks if the object is searchable based on the fields
+// if there are more than 2 fields, we can always add the entry
+// if there are 2 fields, we check if they are ID and DisplayID, if there is any other field, we can add the entry
+// if there is only one field, we don't add the entry, this is just the ID field
+func isSearchableObject(fields []genhooks.Field) bool {
+	switch {
+	// check if there are more than 2 fields, then we can add the entry because we can guarantee that there is at least one searchable field
+	case len(fields) > 2: //nolint:mnd
+		return true
+	case len(fields) == 2: //nolint:mnd
+		// check if the only fields are ID and DisplayID
+		for _, field := range fields {
+			if !strings.EqualFold(field.Name, "ID") && !strings.EqualFold(field.Name, "DisplayID") {
+				return true
+			}
 		}
 	}
 

@@ -5,6 +5,8 @@
 {{reserveImport "entgo.io/ent/dialect/sql"}}
 {{reserveImport "entgo.io/ent/dialect/sql/sqljson"}}
 
+{{ reserveImport "entgo.io/contrib/entgql" }}
+
 import (
 {{- range $object := $.Objects }}
 	"{{ $.EntImport }}/{{ $object.Name | toLower }}"
@@ -24,8 +26,8 @@ type searchResult[T any] struct {
 {{/* For each schema */}}
 {{- range $object := $.Objects }}
 // search{{ $object.Name  }} searches for {{ $object.Name  }} based on the query string looking for matches
-func search{{ $object.Name | toPlural }}(ctx context.Context, query string) ([]*generated.{{ $object.Name }}, error) {
-	return withTransactionalMutation(ctx).{{ $object.Name  }}.Query().
+func search{{ $object.Name | toPlural }}(ctx context.Context, query string, after *entgql.Cursor[string], first *int, before *entgql.Cursor[string], last *int) (*generated.{{ $object.Name }}Connection, error) {
+	request := withTransactionalMutation(ctx).{{ $object.Name  }}.Query().
 		Where(
 			{{ $object.Name  | toLower }}.Or(
 				{{- range $i, $field := $object.Fields }}
@@ -53,16 +55,14 @@ func search{{ $object.Name | toPlural }}(ctx context.Context, query string) ([]*
 					{{- end }}
 				{{- end }}
 			),
-		).
-		{{- if gt $.MaxResults 0 }}
-		Limit({{ $.MaxResults }}).
-		{{- end }}
-		All(ctx)
+		)
+
+	return request.Paginate(ctx, after, first, before, last)
 }
 
 // search{{ $object.Name  }} searches for {{ $object.Name  }} based on the query string looking for matches
-func adminSearch{{ $object.Name | toPlural }}(ctx context.Context, query string) ([]*generated.{{ $object.Name }}, error) {
-	return withTransactionalMutation(ctx).{{ $object.Name  }}.Query().
+func adminSearch{{ $object.Name | toPlural }}(ctx context.Context, query string, after *entgql.Cursor[string], first *int, before *entgql.Cursor[string], last *int) (*generated.{{ $object.Name }}Connection, error) {
+	request  := withTransactionalMutation(ctx).{{ $object.Name  }}.Query().
 		Where(
 			{{ $object.Name  | toLower }}.Or(
 				{{- range $i, $field := $object.AdminFields }}
@@ -90,10 +90,8 @@ func adminSearch{{ $object.Name | toPlural }}(ctx context.Context, query string)
 					{{- end }}
 				{{- end }}
 			),
-		).
-		{{- if gt $.MaxResults 0 }}
-		Limit({{ $.MaxResults }}).
-		{{- end }}
-		All(ctx)
+		)
+
+	return request.Paginate(ctx, after, first, before, last)
 }
 {{ end }}

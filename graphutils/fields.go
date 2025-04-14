@@ -37,7 +37,7 @@ func CheckForRequestedField(ctx context.Context, fieldName string) bool {
 }
 
 // GetPreloads returns the preloads for the current graphql operation
-func GetPreloads(ctx context.Context, mxPageLimit *int) []string {
+func GetPreloads(ctx context.Context, maxPageLimit *int) []string {
 	// skip if the context is not a graphql operation context
 	if ok := graphql.HasOperationContext(ctx); !ok {
 		return nil
@@ -52,7 +52,7 @@ func GetPreloads(ctx context.Context, mxPageLimit *int) []string {
 		gCtx,
 		graphql.CollectFieldsCtx(ctx, nil),
 		"",
-		mxPageLimit,
+		maxPageLimit,
 	)
 }
 
