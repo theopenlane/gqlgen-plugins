@@ -101,8 +101,8 @@ github.com/theopenlane/entx v0.7.2 h1:SojOMjFH34x+FH+IxlH+oE3MCECy5icWlT4IhG9yRO
 github.com/theopenlane/entx v0.7.2/go.mod h1:JXr0QBSOOPHjLKk7yN3G0BcrxyUwN+n1vRoeVZU+BLQ=
 github.com/theopenlane/utils v0.4.5 h1:afS6VqnaNGHHZZ08b9roSEkfJls7fqx8QbJFi6B3f4w=
 github.com/theopenlane/utils v0.4.5/go.mod h1:aX2LvjiXj++v15Kigsqngx5I4cJLXT+Hb86F/4LJfb4=
-github.com/vektah/gqlparser/v2 v2.5.25 h1:FmWtFEa+invTIzWlWK6Vk7BVEZU/97QBzeI8Z1JjGt8=
-github.com/vektah/gqlparser/v2 v2.5.25/go.mod h1:D1/VCZtV3LPnQrcPBeR/q5jkSQIPti0uYCP/RI0gIeo=
+github.com/vektah/gqlparser/v2 v2.5.26 h1:REqqFkO8+SOEgZHR/eHScjjVjGS8Nk3RMO/juiTobN4=
+github.com/vektah/gqlparser/v2 v2.5.26/go.mod h1:D1/VCZtV3LPnQrcPBeR/q5jkSQIPti0uYCP/RI0gIeo=
 github.com/vmihailenco/msgpack/v5 v5.4.1 h1:cQriyiUvjTwOHg8QZaPihLWeRAAVoCpE00IUPn0Bjt8=
 github.com/vmihailenco/msgpack/v5 v5.4.1/go.mod h1:GaZTsDaehaPpQVyxrf5mtQlH+pc21PIudVV/E3rRQok=
 github.com/vmihailenco/tagparser/v2 v2.0.0 h1:y09buUbR+b5aycVFQs/g70pqKVZNBmxwAhO7/IwNM9g=
