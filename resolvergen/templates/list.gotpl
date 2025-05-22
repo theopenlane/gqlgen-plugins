@@ -13,6 +13,17 @@
 first, last = graphutils.SetFirstLastDefaults(first, last, r.maxResultLimit)
 {{- end }}
 
+{{ if $hasOrderBy }}
+if orderBy == nil {
+	orderBy = []*generated.{{ $entity }}Order{
+		{
+			Field:     generated.{{ $entity }}OrderFieldCreatedAt,
+			Direction: entgql.OrderDirectionDesc,
+		},
+	}
+}
+{{- end }}
+
 query, err :=  withTransactionalMutation(ctx).{{ $entity }}.Query().CollectFields(ctx)
 if err != nil {
 	return nil, parseRequestError(err, action{action: ActionGet, object: "{{ $entity | toLower }}"})
