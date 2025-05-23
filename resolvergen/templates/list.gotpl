@@ -6,11 +6,29 @@
 {{ $hasBefore := hasArgument "before" .Field.FieldDefinition.Arguments }}
 {{ $hasLast := hasArgument "last" .Field.FieldDefinition.Arguments }}
 {{ $hasOrderBy := hasArgument "orderBy" .Field.FieldDefinition.Arguments }}
+{{ $orderByIsList := isListType "orderBy" .Field.FieldDefinition.Arguments }}
 {{ $hasWhere := hasArgument "where" .Field.FieldDefinition.Arguments }}
 
 {{ if and $hasFirst $hasLast }}
 // set page limit if nothing was set
 first, last = graphutils.SetFirstLastDefaults(first, last, r.maxResultLimit)
+{{- end }}
+
+{{ if $hasOrderBy }}
+if orderBy == nil {
+	{{- if $orderByIsList }}
+	orderBy = []*generated.{{ $entity }}Order{
+		{
+			Field:     generated.{{ $entity }}OrderFieldCreatedAt,
+			Direction: entgql.OrderDirectionDesc,
+		},
+	{{- else }}
+	orderBy = &generated.{{ $entity }}Order{
+		Field: generated.{{ $entity }}OrderFieldCreatedAt,
+		Direction: entgql.OrderDirectionDesc,
+	{{- end }}
+	}
+}
 {{- end }}
 
 query, err :=  withTransactionalMutation(ctx).{{ $entity }}.Query().CollectFields(ctx)

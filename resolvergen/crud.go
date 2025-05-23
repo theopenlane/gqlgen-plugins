@@ -45,6 +45,7 @@ func renderTemplate(templateName string, input *crudResolver, childTemplates []s
 		"toLower":                 strings.ToLower,
 		"toLowerCamel":            strcase.LowerCamelCase,
 		"hasArgument":             hasArgument,
+		"isListType":              isListType,
 		"hasOwnerField":           hasOwnerField,
 		"reserveImport":           gqltemplates.CurrentImports.Reserve,
 		"modelPackage":            modelPackage,
@@ -170,13 +171,16 @@ func getEntityName(name string) string {
 
 // hasArgument checks if the argument is present in the list of arguments
 func hasArgument(arg string, args gqlast.ArgumentDefinitionList) bool {
-	for _, a := range args {
-		if a.Name == arg {
-			return true
-		}
+	return args.ForName(arg) != nil
+}
+
+func isListType(arg string, args gqlast.ArgumentDefinitionList) bool {
+	a := args.ForName(arg)
+	if a == nil {
+		return false
 	}
 
-	return false
+	return a.Type.Elem != nil
 }
 
 // hasOwnerField checks if the field has an owner field in the input arguments
