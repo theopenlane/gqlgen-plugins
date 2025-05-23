@@ -171,11 +171,7 @@ func getEntityName(name string) string {
 
 // hasArgument checks if the argument is present in the list of arguments
 func hasArgument(arg string, args gqlast.ArgumentDefinitionList) bool {
-	if args.ForName(arg) != nil {
-		return true
-	}
-
-	return false
+	return args.ForName(arg) != nil
 }
 
 func isListType(arg string, args gqlast.ArgumentDefinitionList) bool {
