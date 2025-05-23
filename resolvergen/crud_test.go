@@ -178,3 +178,75 @@ func TestGetInputObjectName(t *testing.T) {
 		})
 	}
 }
+
+func TestIsListType(t *testing.T) {
+	testCases := []struct {
+		name     string
+		argName  string
+		args     ast.ArgumentDefinitionList
+		expected bool
+	}{
+		{
+			name:    "argument is list type",
+			argName: "ids",
+			args: ast.ArgumentDefinitionList{
+				{
+					Name: "ids",
+					Type: ast.NonNullListType(ast.NamedType("ID", nil), nil),
+				},
+			},
+			expected: true,
+		},
+		{
+			name:    "argument is not list type",
+			argName: "name",
+			args: ast.ArgumentDefinitionList{
+				{
+					Name: "name",
+					Type: ast.NamedType("String", nil),
+				},
+			},
+			expected: false,
+		},
+		{
+			name:    "argument not found",
+			argName: "missing",
+			args: ast.ArgumentDefinitionList{
+				{
+					Name: "ids",
+					Type: ast.NonNullListType(ast.NamedType("ID", nil), nil),
+				},
+			},
+			expected: false,
+		},
+		{
+			name:    "argument is list of objects",
+			argName: "items",
+			args: ast.ArgumentDefinitionList{
+				{
+					Name: "items",
+					Type: ast.ListType(ast.NamedType("Item", nil), nil),
+				},
+			},
+			expected: true,
+		},
+		{
+			name:    "argument is non-list type",
+			argName: "count",
+			args: ast.ArgumentDefinitionList{
+				{
+					Name: "count",
+					Type: ast.NonNullNamedType("Int", nil),
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			res := isListType(tc.argName, tc.args)
+			assert.Equal(t, tc.expected, res)
+		})
+	}
+}
