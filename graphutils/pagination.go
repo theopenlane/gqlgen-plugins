@@ -30,34 +30,34 @@ func setDefaultPaginationLimit(column *graphql.CollectedField, maxPageSize *int)
 			return
 		}
 
-		// if they aren't nil; ensure they aren't higher than the max page size
-		if first != nil && first.Value != nil {
-			if first.Value.Raw != "" {
-				setValue, err := strconv.Atoi(first.Value.Raw)
-				if err == nil && setValue <= *maxPageSize {
-					// do nothing
+		if first != nil && first.Value != nil && first.Value.Raw != "" {
+			setValue, err := strconv.Atoi(first.Value.Raw)
+			if err == nil {
+				if setValue <= *maxPageSize {
+					return
+				} else {
+					first.Value = defaultFirstValue
 					return
 				}
-
-				first.Value = defaultFirstValue
-
-				return
 			}
 		}
 
-		if last != nil && last.Value != nil {
-			if last.Value.Raw != "" {
-				setValue, err := strconv.Atoi(last.Value.Raw)
-				if err == nil && setValue <= *maxPageSize {
-					// do nothing
+		if last != nil && last.Value != nil && last.Value.Raw != "" {
+			setValue, err := strconv.Atoi(last.Value.Raw)
+			if err == nil {
+				if setValue <= *maxPageSize {
+					return
+				} else {
+					last.Value = defaultFirstValue
 					return
 				}
-
-				last.Value = defaultFirstValue
-
-				return
 			}
 		}
+
+		column.Arguments = append(column.Arguments, &ast.Argument{
+			Name:  firstArg,
+			Value: defaultFirstValue,
+		})
 	}
 }
 

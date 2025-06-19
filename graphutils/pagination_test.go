@@ -191,6 +191,209 @@ func TestSetDefaultPaginationLimit(t *testing.T) {
 				Kind: ast.IntValue,
 			},
 		},
+		{
+			name: "both first and last arguments set within limit",
+			column: &graphql.CollectedField{
+				Field: &ast.Field{
+					Definition: &ast.FieldDefinition{
+						Arguments: ast.ArgumentDefinitionList{
+							&ast.ArgumentDefinition{Name: firstArg},
+							&ast.ArgumentDefinition{Name: lastArg},
+						},
+					},
+					Arguments: ast.ArgumentList{
+						&ast.Argument{
+							Name: firstArg,
+							Value: &ast.Value{
+								Raw:  "3",
+								Kind: ast.IntValue,
+							},
+						},
+						&ast.Argument{
+							Name: lastArg,
+							Value: &ast.Value{
+								Raw:  "5",
+								Kind: ast.IntValue,
+							},
+						},
+					},
+				},
+			},
+			expectedFirst: &ast.Value{
+				Raw:  "3",
+				Kind: ast.IntValue,
+			},
+			expectedLast: &ast.Value{
+				Raw:  "5",
+				Kind: ast.IntValue,
+			},
+		},
+		{
+			name: "both first and last arguments set beyond limit",
+			column: &graphql.CollectedField{
+				Field: &ast.Field{
+					Definition: &ast.FieldDefinition{
+						Arguments: ast.ArgumentDefinitionList{
+							&ast.ArgumentDefinition{Name: firstArg},
+							&ast.ArgumentDefinition{Name: lastArg},
+						},
+					},
+					Arguments: ast.ArgumentList{
+						&ast.Argument{
+							Name: firstArg,
+							Value: &ast.Value{
+								Raw:  "15",
+								Kind: ast.IntValue,
+							},
+						},
+						&ast.Argument{
+							Name: lastArg,
+							Value: &ast.Value{
+								Raw:  "20",
+								Kind: ast.IntValue,
+							},
+						},
+					},
+				},
+			},
+			expectedFirst: &ast.Value{
+				Raw:  strconv.Itoa(maxPageSize),
+				Kind: ast.IntValue,
+			},
+			expectedLast: &ast.Value{
+				Raw:  "20",
+				Kind: ast.IntValue,
+			},
+		},
+		{
+			name: "first argument invalid value",
+			column: &graphql.CollectedField{
+				Field: &ast.Field{
+					Definition: &ast.FieldDefinition{
+						Arguments: ast.ArgumentDefinitionList{
+							&ast.ArgumentDefinition{Name: firstArg},
+							&ast.ArgumentDefinition{Name: lastArg},
+						},
+					},
+					Arguments: ast.ArgumentList{
+						&ast.Argument{
+							Name: firstArg,
+							Value: &ast.Value{
+								Raw:  "invalid",
+								Kind: ast.StringValue,
+							},
+						},
+					},
+				},
+			},
+			expectedFirst: &ast.Value{
+				Raw:  "invalid",
+				Kind: ast.StringValue,
+			},
+			expectedLast: nil,
+		},
+		{
+			name: "last argument invalid value",
+			column: &graphql.CollectedField{
+				Field: &ast.Field{
+					Definition: &ast.FieldDefinition{
+						Arguments: ast.ArgumentDefinitionList{
+							&ast.ArgumentDefinition{Name: firstArg},
+							&ast.ArgumentDefinition{Name: lastArg},
+						},
+					},
+					Arguments: ast.ArgumentList{
+						&ast.Argument{
+							Name: lastArg,
+							Value: &ast.Value{
+								Raw:  "invalid",
+								Kind: ast.StringValue,
+							},
+						},
+					},
+				},
+			},
+			expectedFirst: &ast.Value{
+				Raw:  strconv.Itoa(maxPageSize),
+				Kind: ast.IntValue,
+			},
+			expectedLast: &ast.Value{
+				Raw:  "invalid",
+				Kind: ast.StringValue,
+			},
+		},
+		{
+			name: "no first argument in definition",
+			column: &graphql.CollectedField{
+				Field: &ast.Field{
+					Definition: &ast.FieldDefinition{
+						Arguments: ast.ArgumentDefinitionList{
+							&ast.ArgumentDefinition{Name: lastArg},
+						},
+					},
+					Arguments: ast.ArgumentList{},
+				},
+			},
+			expectedFirst: nil,
+			expectedLast:  nil,
+		},
+		{
+			name: "first argument with empty raw value",
+			column: &graphql.CollectedField{
+				Field: &ast.Field{
+					Definition: &ast.FieldDefinition{
+						Arguments: ast.ArgumentDefinitionList{
+							&ast.ArgumentDefinition{Name: firstArg},
+							&ast.ArgumentDefinition{Name: lastArg},
+						},
+					},
+					Arguments: ast.ArgumentList{
+						&ast.Argument{
+							Name: firstArg,
+							Value: &ast.Value{
+								Raw:  "",
+								Kind: ast.IntValue,
+							},
+						},
+					},
+				},
+			},
+			expectedFirst: &ast.Value{
+				Raw:  "",
+				Kind: ast.IntValue,
+			},
+			expectedLast: nil,
+		},
+		{
+			name: "last argument with empty raw value",
+			column: &graphql.CollectedField{
+				Field: &ast.Field{
+					Definition: &ast.FieldDefinition{
+						Arguments: ast.ArgumentDefinitionList{
+							&ast.ArgumentDefinition{Name: firstArg},
+							&ast.ArgumentDefinition{Name: lastArg},
+						},
+					},
+					Arguments: ast.ArgumentList{
+						&ast.Argument{
+							Name: lastArg,
+							Value: &ast.Value{
+								Raw:  "",
+								Kind: ast.IntValue,
+							},
+						},
+					},
+				},
+			},
+			expectedFirst: &ast.Value{
+				Raw:  strconv.Itoa(maxPageSize),
+				Kind: ast.IntValue,
+			},
+			expectedLast: &ast.Value{
+				Raw:  "",
+				Kind: ast.IntValue,
+			},
+		},
 	}
 
 	for _, tt := range tests {
