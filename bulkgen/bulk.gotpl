@@ -2,6 +2,8 @@
 {{ reserveImport "encoding/csv" }}
 {{ reserveImport "os" }}
 {{ reserveImport "fmt" }}
+{{ reserveImport "github.com/rs/zerolog/log" }}
+{{ reserveImport "github.com/theopenlane/utils/rout" }}
 
 {{- if $.EntImport }}
 {{ reserveImport $.EntImport }}
@@ -15,6 +17,7 @@
 
 {{ range $object := .Objects }}
 
+{{- if eq $object.OperationType "create" }}
 // bulkCreate{{ $object.Name }} uses the CreateBulk function to create multiple {{ $object.Name }} entities
 func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, input []*generated.Create{{ $object.Name }}Input) (*{{ $root.ModelPackage }}{{ $object.Name }}BulkCreatePayload, error) {
     c := withTransactionalMutation(ctx)
@@ -33,5 +36,35 @@ func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, in
 		{{ $object.PluralName }}: res,
 	}, nil
 }
+{{- else if eq $object.OperationType "delete" }}
+// bulkDelete{{ $object.Name }} deletes multiple {{ $object.Name }} entities by their IDs
+func (r *mutationResolver) bulkDelete{{ $object.Name }} (ctx context.Context, ids []string) (*{{ $root.ModelPackage }}{{ $object.Name }}BulkDeletePayload, error) {
+	if len(ids) == 0 {
+		return nil, rout.NewMissingRequiredFieldError("ids")
+	}
+
+	deletedIDs := make([]string, 0, len(ids))
+	
+	// delete each {{ $object.Name | toLower }} individually to ensure proper cleanup
+	for _, id := range ids {
+		if err := withTransactionalMutation(ctx).{{ $object.Name }}.DeleteOneID(id).Exec(ctx); err != nil {
+			log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to delete {{ $object.Name | toLower }} in bulk operation")
+			continue
+		}
+
+		// call edge cleanup if the function exists
+		if err := generated.{{ $object.Name }}EdgeCleanup(ctx, id); err != nil {
+			log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to cleanup {{ $object.Name | toLower }} edges in bulk operation")
+			continue
+		}
+
+		deletedIDs = append(deletedIDs, id)
+	}
+
+	return &{{ $root.ModelPackage }}{{ $object.Name }}BulkDeletePayload{
+		DeletedIDs: deletedIDs,
+	}, nil
+}
+{{- end }}
 
 {{ end }}
