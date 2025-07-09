@@ -145,21 +145,20 @@ func (m *Plugin) generateSingleFile(data codegen.Data) error {
 		if strings.Contains(lowerName, "bulk") && !strings.Contains(lowerName, "csv") {
 			var objectName, operationType string
 
-			// Handle bulk create mutations
-			if strings.Contains(lowerName, "createbulk") {
+			switch {
+			case strings.Contains(lowerName, "createbulk"):
 				objectName = strings.Replace(f.Name, "createBulk", "", 1)
 				operationType = "create"
-			} else if strings.Contains(lowerName, "bulkcreate") {
+			case strings.Contains(lowerName, "bulkcreate"):
 				objectName = strings.Replace(f.Name, "bulkCreate", "", 1)
 				operationType = "create"
-			} else if strings.Contains(lowerName, "deletebulk") {
+			case strings.Contains(lowerName, "deletebulk"):
 				objectName = strings.Replace(f.Name, "deleteBulk", "", 1)
 				operationType = "delete"
-			} else if strings.Contains(lowerName, "bulkdelete") {
+			case strings.Contains(lowerName, "bulkdelete"):
 				objectName = strings.Replace(f.Name, "bulkDelete", "", 1)
 				operationType = "delete"
-			} else {
-				// Skip if we can't determine the operation type
+			default:
 				continue
 			}
 
