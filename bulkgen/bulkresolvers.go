@@ -94,6 +94,8 @@ type Object struct {
 	PluralName string
 	// Fields of the object
 	Fields []string
+	// OperationType indicates whether this is a create or delete operation
+	OperationType string
 }
 
 // GenerateCode generates the bulk resolver code
@@ -138,22 +140,43 @@ func (m *Plugin) generateSingleFile(data codegen.Data) error {
 	for _, f := range data.Schema.Mutation.Fields {
 		lowerName := strings.ToLower(f.Name)
 
-		// if the field is a bulk create mutation, add it to the list of objects
+		// if the field is a bulk create or delete mutation, add it to the list of objects
 		// we skip csv bulk mutations because they will reuse the same functions
 		if strings.Contains(lowerName, "bulk") && !strings.Contains(lowerName, "csv") {
-			objectName := strings.Replace(f.Name, "createBulk", "", 1)
+			var objectName, operationType string
+
+			// Handle bulk create mutations
+			if strings.Contains(lowerName, "createbulk") {
+				objectName = strings.Replace(f.Name, "createBulk", "", 1)
+				operationType = "create"
+			} else if strings.Contains(lowerName, "bulkcreate") {
+				objectName = strings.Replace(f.Name, "bulkCreate", "", 1)
+				operationType = "create"
+			} else if strings.Contains(lowerName, "deletebulk") {
+				objectName = strings.Replace(f.Name, "deleteBulk", "", 1)
+				operationType = "delete"
+			} else if strings.Contains(lowerName, "bulkdelete") {
+				objectName = strings.Replace(f.Name, "bulkDelete", "", 1)
+				operationType = "delete"
+			} else {
+				// Skip if we can't determine the operation type
+				continue
+			}
 
 			object := Object{
-				Name:       objectName,
-				PluralName: pluralize.NewClient().Plural(objectName),
-				Fields:     getCreateInputFields(objectName, data),
+				Name:          objectName,
+				PluralName:    pluralize.NewClient().Plural(objectName),
+				Fields:        getCreateInputFields(objectName, data),
+				OperationType: operationType,
 			}
 
 			inputData.Objects = append(inputData.Objects, object)
 
-			// Generate and write the CSV file
-			if err := generateSampleCSV(object, m.CSVOutputPath); err != nil {
-				return err
+			// Generate and write the CSV file only for create operations
+			if operationType == "create" {
+				if err := generateSampleCSV(object, m.CSVOutputPath); err != nil {
+					return err
+				}
 			}
 		}
 	}
