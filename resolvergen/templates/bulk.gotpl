@@ -1,6 +1,16 @@
+{{ reserveImport "github.com/theopenlane/utils/rout" }}
+
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 {{ $isOrgOwned := .Field | hasOwnerField  -}}
+{{ $isDelete := or (contains .Field.GoFieldName "Delete") (contains .Field.GoFieldName "delete") -}}
 
+{{- if $isDelete }}
+if len(ids) == 0 {
+    return nil, rout.NewMissingRequiredFieldError("ids")
+}
+
+return r.bulkDelete{{ $entity }}(ctx, ids)
+{{- else }}
 if len(input) == 0 {
     return nil, rout.NewMissingRequiredFieldError("input")
 }
@@ -16,3 +26,4 @@ if err := setOrganizationInAuthContextBulkRequest(ctx, input); err != nil {
 {{- end }}
 
 return r.bulkCreate{{ $entity }}(ctx, input)
+{{- end }}

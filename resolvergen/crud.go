@@ -50,6 +50,7 @@ func renderTemplate(templateName string, input *crudResolver, childTemplates []s
 		"reserveImport":           gqltemplates.CurrentImports.Reserve,
 		"modelPackage":            modelPackage,
 		"isCommentUpdateOnObject": isCommentUpdateOnObject,
+		"contains":                strings.Contains,
 	}).ParseFS(templates, patterns...)
 	if err != nil {
 		panic(err)
