@@ -11,7 +11,7 @@ require (
 	github.com/samber/lo v1.51.0
 	github.com/stoewer/go-strcase v1.3.1
 	github.com/stretchr/testify v1.10.0
-	github.com/theopenlane/entx v0.7.2
+	github.com/theopenlane/entx v0.11.2
 	github.com/vektah/gqlparser/v2 v2.5.30
 )
 
