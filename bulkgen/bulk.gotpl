@@ -36,6 +36,47 @@ func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, in
 		{{ $object.PluralName }}: res,
 	}, nil
 }
+{{- else if eq $object.OperationType "update" }}
+// bulkUpdate{{ $object.Name }} updates multiple {{ $object.Name }} entities
+func (r *mutationResolver) bulkUpdate{{ $object.Name }} (ctx context.Context, input []*{{ $root.ModelPackage }}BulkUpdate{{ $object.Name }}Input) (*{{ $root.ModelPackage }}{{ $object.Name }}BulkUpdatePayload, error) {
+	if len(input) == 0 {
+		return nil, rout.NewMissingRequiredFieldError("input")
+	}
+
+	c := withTransactionalMutation(ctx)
+	results := make([]*generated.{{ $object.Name }}, 0, len(input))
+	updatedIDs := make([]string, 0, len(input))
+	
+	// update each {{ $object.Name | toLower }} individually to ensure proper validation
+	for _, updateInput := range input {
+		if updateInput.ID == "" {
+			log.Error().Msg("missing id in bulk update for {{ $object.Name | toLower }}")
+			continue
+		}
+
+		// get the existing entity first
+		existing, err := c.{{ $object.Name }}.Get(ctx, updateInput.ID)
+		if err != nil {
+			log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", updateInput.ID).Msg("failed to get {{ $object.Name | toLower }} in bulk update operation")
+			continue
+		}
+
+		// setup update request
+		updatedEntity, err := existing.Update().SetInput(*updateInput.Input).Save(ctx)
+		if err != nil {
+			log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", updateInput.ID).Msg("failed to update {{ $object.Name | toLower }} in bulk operation")
+			continue
+		}
+
+		results = append(results, updatedEntity)
+		updatedIDs = append(updatedIDs, updateInput.ID)
+	}
+
+	return &{{ $root.ModelPackage }}{{ $object.Name }}BulkUpdatePayload{
+		{{ $object.PluralName }}: results,
+		UpdatedIDs: updatedIDs,
+	}, nil
+}
 {{- else if eq $object.OperationType "delete" }}
 // bulkDelete{{ $object.Name }} deletes multiple {{ $object.Name }} entities by their IDs
 func (r *mutationResolver) bulkDelete{{ $object.Name }} (ctx context.Context, ids []string) (*{{ $root.ModelPackage }}{{ $object.Name }}BulkDeletePayload, error) {
