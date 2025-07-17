@@ -152,6 +152,12 @@ func (m *Plugin) generateSingleFile(data codegen.Data) error {
 			case strings.Contains(lowerName, "bulkcreate"):
 				objectName = strings.Replace(f.Name, "bulkCreate", "", 1)
 				operationType = "create"
+			case strings.Contains(lowerName, "updatebulk"):
+				objectName = strings.Replace(f.Name, "updateBulk", "", 1)
+				operationType = "update"
+			case strings.Contains(lowerName, "bulkupdate"):
+				objectName = strings.Replace(f.Name, "bulkUpdate", "", 1)
+				operationType = "update"
 			case strings.Contains(lowerName, "deletebulk"):
 				objectName = strings.Replace(f.Name, "deleteBulk", "", 1)
 				operationType = "delete"

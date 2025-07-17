@@ -1,8 +1,10 @@
 {{ reserveImport "github.com/theopenlane/utils/rout" }}
+{{ reserveImport "github.com/rs/zerolog/log" }}
 
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 {{ $isOrgOwned := .Field | hasOwnerField  -}}
 {{ $isDelete := or (contains .Field.GoFieldName "Delete") (contains .Field.GoFieldName "delete") -}}
+{{ $isUpdate := or (contains .Field.GoFieldName "Update") (contains .Field.GoFieldName "update") -}}
 
 {{- if $isDelete }}
 if len(ids) == 0 {
@@ -10,6 +12,20 @@ if len(ids) == 0 {
 }
 
 return r.bulkDelete{{ $entity }}(ctx, ids)
+{{- else if $isUpdate }}
+if len(input) == 0 {
+    return nil, rout.NewMissingRequiredFieldError("input")
+}
+
+// set the organization in the auth context if its not done for us
+// this will choose the first input OwnerID when using a personal access token
+if err := setOrganizationInAuthContextBulkRequest(ctx, input); err != nil {
+    log.Error().Err(err).Msg("failed to set organization in auth context")
+
+    return nil, rout.NewMissingRequiredFieldError("owner_id")
+}
+
+return r.bulkUpdate{{ $entity }}(ctx, input)
 {{- else }}
 if len(input) == 0 {
     return nil, rout.NewMissingRequiredFieldError("input")
