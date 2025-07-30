@@ -38,38 +38,38 @@ func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, in
 }
 {{- else if eq $object.OperationType "update" }}
 // bulkUpdate{{ $object.Name }} updates multiple {{ $object.Name }} entities
-func (r *mutationResolver) bulkUpdate{{ $object.Name }} (ctx context.Context, input []*{{ $root.ModelPackage }}BulkUpdate{{ $object.Name }}Input) (*{{ $root.ModelPackage }}{{ $object.Name }}BulkUpdatePayload, error) {
-	if len(input) == 0 {
-		return nil, rout.NewMissingRequiredFieldError("input")
+func (r *mutationResolver) bulkUpdate{{ $object.Name }} (ctx context.Context, ids []string, input generated.Update{{ $object.Name }}Input) (*{{ $root.ModelPackage }}{{ $object.Name }}BulkUpdatePayload, error) {
+	if len(ids) == 0 {
+		return nil, rout.NewMissingRequiredFieldError("ids")
 	}
 
 	c := withTransactionalMutation(ctx)
-	results := make([]*generated.{{ $object.Name }}, 0, len(input))
-	updatedIDs := make([]string, 0, len(input))
+	results := make([]*generated.{{ $object.Name }}, 0, len(ids))
+	updatedIDs := make([]string, 0, len(ids))
 	
 	// update each {{ $object.Name | toLower }} individually to ensure proper validation
-	for _, updateInput := range input {
-		if updateInput.ID == "" {
-			log.Error().Msg("missing id in bulk update for {{ $object.Name | toLower }}")
+	for _, id := range ids {
+		if id == "" {
+			log.Error().Msg("empty id in bulk update for {{ $object.Name | toLower }}")
 			continue
 		}
 
 		// get the existing entity first
-		existing, err := c.{{ $object.Name }}.Get(ctx, updateInput.ID)
+		existing, err := c.{{ $object.Name }}.Get(ctx, id)
 		if err != nil {
-			log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", updateInput.ID).Msg("failed to get {{ $object.Name | toLower }} in bulk update operation")
+			log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to get {{ $object.Name | toLower }} in bulk update operation")
 			continue
 		}
 
 		// setup update request
-		updatedEntity, err := existing.Update().SetInput(*updateInput.Input).Save(ctx)
+		updatedEntity, err := existing.Update().SetInput(input).Save(ctx)
 		if err != nil {
-			log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", updateInput.ID).Msg("failed to update {{ $object.Name | toLower }} in bulk operation")
+			log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to update {{ $object.Name | toLower }} in bulk operation")
 			continue
 		}
 
 		results = append(results, updatedEntity)
-		updatedIDs = append(updatedIDs, updateInput.ID)
+		updatedIDs = append(updatedIDs, id)
 	}
 
 	return &{{ $root.ModelPackage }}{{ $object.Name }}BulkUpdatePayload{
