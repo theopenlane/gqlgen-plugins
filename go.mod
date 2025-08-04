@@ -3,7 +3,7 @@ module github.com/theopenlane/gqlgen-plugins
 go 1.24.1
 
 require (
-	entgo.io/contrib v0.6.0
+	entgo.io/contrib v0.7.0
 	entgo.io/ent v0.14.4
 	github.com/99designs/gqlgen v0.17.78
 	github.com/gertd/go-pluralize v0.2.1
