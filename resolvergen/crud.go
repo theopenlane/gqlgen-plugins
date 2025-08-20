@@ -51,6 +51,8 @@ func renderTemplate(templateName string, input *crudResolver, childTemplates []s
 		"modelPackage":            modelPackage,
 		"isCommentUpdateOnObject": isCommentUpdateOnObject,
 		"contains":                strings.Contains,
+		"hasStatusField":          doesSchemaHaveArchivedStatus,
+		"getArchivedStatusValue":  getArchivedStatusEnum,
 	}).ParseFS(templates, patterns...)
 	if err != nil {
 		panic(err)
@@ -254,4 +256,27 @@ func getInputObjectName(objectName string) string {
 	objectName = strings.ReplaceAll(objectName, UpdateOperation, "")
 
 	return strings.ReplaceAll(objectName, InputObject, "")
+}
+
+func doesSchemaHaveArchivedStatus(entityName string) bool {
+	// list of entities that have status fields that should default to Archived
+	//
+	// Right now it just works with Archived status alone but should be easily extendable in the future
+	// if we need to support another status as default for other schemas that do not
+	// use archived
+	//
+	// We do not want to break other schemas that do not have archived status so we cannot add this for everyone
+	// else we will get more empty datasets as results.
+	//
+	// Also do not want to use reflection magic
+	entitiesWithStatus := map[string]bool{
+		"Program": true,
+	}
+
+	return entitiesWithStatus[entityName]
+}
+
+// getArchivedStatusEnum returns the archived status enum value for the entity
+func getArchivedStatusEnum(entityName string) string {
+	return "enums." + entityName + "StatusArchived"
 }
