@@ -8,6 +8,8 @@ import (
 	"github.com/99designs/gqlgen/plugin"
 	"github.com/99designs/gqlgen/plugin/resolvergen"
 	"github.com/vektah/gqlparser/v2/ast"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var (
@@ -29,6 +31,8 @@ type ResolverPlugin struct {
 	// are stored in `templates/updatefields/*.gotpl`, `templates/deletefields/*.gotpl`
 	// defaults to true
 	includeCustomFields bool
+
+	archivableSchemas map[string]bool
 }
 
 // Name returns the name of the plugin
@@ -69,6 +73,17 @@ func WithEntGeneratedPackage(entPackage string) Options {
 func WithExcludeCustomUpdateFields() Options {
 	return func(p *ResolverPlugin) {
 		p.includeCustomFields = false
+	}
+}
+
+// WithArchivableSchemas sets schemas that can have a status of archived
+func WithArchivableSchemas(schemas []string) Options {
+	return func(p *ResolverPlugin) {
+		p.archivableSchemas = map[string]bool{}
+
+		for _, s := range schemas {
+			p.archivableSchemas[cases.Title(language.English, cases.Compact).String(s)] = true
+		}
 	}
 }
 

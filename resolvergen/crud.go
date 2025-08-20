@@ -29,6 +29,8 @@ type crudResolver struct {
 	EntImport string
 	// IncludeCustomUpdateFields is a flag to include custom fields
 	IncludeCustomUpdateFields bool
+	// ArchivableSchemas is a map of entity names that support archived status filtering
+	ArchivableSchemas map[string]bool
 }
 
 // renderTemplate renders the template with the given name
@@ -51,7 +53,7 @@ func renderTemplate(templateName string, input *crudResolver, childTemplates []s
 		"modelPackage":            modelPackage,
 		"isCommentUpdateOnObject": isCommentUpdateOnObject,
 		"contains":                strings.Contains,
-		"hasStatusField":          doesSchemaHaveArchivedStatus,
+		"hasStatusField":          func(entityName string) bool { return input.ArchivableSchemas[entityName] },
 		"getArchivedStatusValue":  getArchivedStatusEnum,
 	}).ParseFS(templates, patterns...)
 	if err != nil {
@@ -82,6 +84,7 @@ func (r *ResolverPlugin) renderCreate(field *codegen.Field) string {
 		ModelPackage:              r.modelPackage,
 		EntImport:                 r.entGeneratedPackage,
 		IncludeCustomUpdateFields: r.includeCustomFields,
+		ArchivableSchemas:         r.archivableSchemas,
 	}, []string{})
 }
 
@@ -95,6 +98,7 @@ func (r *ResolverPlugin) renderUpdate(field *codegen.Field) string {
 		ModelPackage:              r.modelPackage,
 		EntImport:                 r.entGeneratedPackage,
 		IncludeCustomUpdateFields: r.includeCustomFields,
+		ArchivableSchemas:         r.archivableSchemas,
 	}
 
 	return renderTemplate("update.gotpl", cr, []string{"updatefields/*.gotpl"})
@@ -107,41 +111,46 @@ func (r *ResolverPlugin) renderDelete(field *codegen.Field) string {
 		ModelPackage:              r.modelPackage,
 		EntImport:                 r.entGeneratedPackage,
 		IncludeCustomUpdateFields: r.includeCustomFields,
+		ArchivableSchemas:         r.archivableSchemas,
 	}, []string{"deletefields/*.gotpl"})
 }
 
 // renderBulkUpload renders the bulk upload template
 func (r *ResolverPlugin) renderBulkUpload(field *codegen.Field) string {
 	return renderTemplate("upload.gotpl", &crudResolver{
-		Field:        field,
-		ModelPackage: r.modelPackage,
-		EntImport:    r.entGeneratedPackage,
+		Field:             field,
+		ModelPackage:      r.modelPackage,
+		EntImport:         r.entGeneratedPackage,
+		ArchivableSchemas: r.archivableSchemas,
 	}, []string{})
 }
 
 // renderBulk renders the bulk template
 func (r *ResolverPlugin) renderBulk(field *codegen.Field) string {
 	return renderTemplate("bulk.gotpl", &crudResolver{
-		Field:        field,
-		ModelPackage: r.modelPackage,
-		EntImport:    r.entGeneratedPackage,
+		Field:             field,
+		ModelPackage:      r.modelPackage,
+		EntImport:         r.entGeneratedPackage,
+		ArchivableSchemas: r.archivableSchemas,
 	}, []string{})
 }
 
 // renderQuery renders the query template
 func (r *ResolverPlugin) renderQuery(field *codegen.Field) string {
 	return renderTemplate("get.gotpl", &crudResolver{
-		Field:        field,
-		ModelPackage: r.modelPackage,
-		EntImport:    r.entGeneratedPackage,
+		Field:             field,
+		ModelPackage:      r.modelPackage,
+		EntImport:         r.entGeneratedPackage,
+		ArchivableSchemas: r.archivableSchemas,
 	}, []string{})
 }
 
 // renderList renders the list template
 func (r *ResolverPlugin) renderList(field *codegen.Field) string {
 	return renderTemplate("list.gotpl", &crudResolver{
-		Field:     field,
-		EntImport: r.entGeneratedPackage,
+		Field:             field,
+		EntImport:         r.entGeneratedPackage,
+		ArchivableSchemas: r.archivableSchemas,
 	}, []string{})
 }
 
@@ -256,24 +265,6 @@ func getInputObjectName(objectName string) string {
 	objectName = strings.ReplaceAll(objectName, UpdateOperation, "")
 
 	return strings.ReplaceAll(objectName, InputObject, "")
-}
-
-func doesSchemaHaveArchivedStatus(entityName string) bool {
-	// list of entities that have status fields that should default to Archived
-	//
-	// Right now it just works with Archived status alone but should be easily extendable in the future
-	// if we need to support another status as default for other schemas that do not
-	// use archived
-	//
-	// We do not want to break other schemas that do not have archived status so we cannot add this for everyone
-	// else we will get more empty datasets as results.
-	//
-	// Also do not want to use reflection magic
-	entitiesWithStatus := map[string]bool{
-		"Program": true,
-	}
-
-	return entitiesWithStatus[entityName]
 }
 
 // getArchivedStatusEnum returns the archived status enum value for the entity
