@@ -1,6 +1,6 @@
-{{ reserveImport "github.com/theopenlane/gqlgen-plugins/graphutils" }}
-
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName -}}
+{{ reserveImport "github.com/theopenlane/gqlgen-plugins/graphutils" }}
+{{ if and (hasArgument "where" .Field.FieldDefinition.Arguments) (hasStatusField $entity) }}{{ reserveImport "github.com/theopenlane/core/pkg/enums" }}{{ end }}
 {{ $hasAfter := hasArgument "after" .Field.FieldDefinition.Arguments }}
 {{ $hasFirst := hasArgument "first" .Field.FieldDefinition.Arguments }}
 {{ $hasBefore := hasArgument "before" .Field.FieldDefinition.Arguments }}
@@ -12,6 +12,17 @@
 {{ if and $hasFirst $hasLast }}
 // set page limit if nothing was set
 first, last = graphutils.SetFirstLastDefaults(first, last, r.maxResultLimit)
+{{- end }}
+
+{{ if and $hasWhere (hasStatusField $entity) }}
+// apply default status filtering to exclude archived items unless they are explicitly requested
+if where == nil {
+	where = &generated.{{ $entity }}WhereInput{}
+}
+if where.Status == nil && where.StatusNEQ == nil && where.StatusIn == nil && where.StatusNotIn == nil {
+	archivedStatus := {{ getArchivedStatusValue $entity }}
+	where.StatusNEQ = &archivedStatus
+}
 {{- end }}
 
 {{ if $hasOrderBy }}

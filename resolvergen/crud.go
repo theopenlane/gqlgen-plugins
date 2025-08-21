@@ -29,6 +29,8 @@ type crudResolver struct {
 	EntImport string
 	// IncludeCustomUpdateFields is a flag to include custom fields
 	IncludeCustomUpdateFields bool
+	// ArchivableSchemas is a map of entity names that support archived status filtering
+	ArchivableSchemas map[string]bool
 }
 
 // renderTemplate renders the template with the given name
@@ -51,6 +53,8 @@ func renderTemplate(templateName string, input *crudResolver, childTemplates []s
 		"modelPackage":            modelPackage,
 		"isCommentUpdateOnObject": isCommentUpdateOnObject,
 		"contains":                strings.Contains,
+		"hasStatusField":          func(entityName string) bool { return input.ArchivableSchemas[entityName] },
+		"getArchivedStatusValue":  getArchivedStatusEnum,
 	}).ParseFS(templates, patterns...)
 	if err != nil {
 		panic(err)
@@ -80,6 +84,7 @@ func (r *ResolverPlugin) renderCreate(field *codegen.Field) string {
 		ModelPackage:              r.modelPackage,
 		EntImport:                 r.entGeneratedPackage,
 		IncludeCustomUpdateFields: r.includeCustomFields,
+		ArchivableSchemas:         r.archivableSchemas,
 	}, []string{})
 }
 
@@ -93,6 +98,7 @@ func (r *ResolverPlugin) renderUpdate(field *codegen.Field) string {
 		ModelPackage:              r.modelPackage,
 		EntImport:                 r.entGeneratedPackage,
 		IncludeCustomUpdateFields: r.includeCustomFields,
+		ArchivableSchemas:         r.archivableSchemas,
 	}
 
 	return renderTemplate("update.gotpl", cr, []string{"updatefields/*.gotpl"})
@@ -105,41 +111,46 @@ func (r *ResolverPlugin) renderDelete(field *codegen.Field) string {
 		ModelPackage:              r.modelPackage,
 		EntImport:                 r.entGeneratedPackage,
 		IncludeCustomUpdateFields: r.includeCustomFields,
+		ArchivableSchemas:         r.archivableSchemas,
 	}, []string{"deletefields/*.gotpl"})
 }
 
 // renderBulkUpload renders the bulk upload template
 func (r *ResolverPlugin) renderBulkUpload(field *codegen.Field) string {
 	return renderTemplate("upload.gotpl", &crudResolver{
-		Field:        field,
-		ModelPackage: r.modelPackage,
-		EntImport:    r.entGeneratedPackage,
+		Field:             field,
+		ModelPackage:      r.modelPackage,
+		EntImport:         r.entGeneratedPackage,
+		ArchivableSchemas: r.archivableSchemas,
 	}, []string{})
 }
 
 // renderBulk renders the bulk template
 func (r *ResolverPlugin) renderBulk(field *codegen.Field) string {
 	return renderTemplate("bulk.gotpl", &crudResolver{
-		Field:        field,
-		ModelPackage: r.modelPackage,
-		EntImport:    r.entGeneratedPackage,
+		Field:             field,
+		ModelPackage:      r.modelPackage,
+		EntImport:         r.entGeneratedPackage,
+		ArchivableSchemas: r.archivableSchemas,
 	}, []string{})
 }
 
 // renderQuery renders the query template
 func (r *ResolverPlugin) renderQuery(field *codegen.Field) string {
 	return renderTemplate("get.gotpl", &crudResolver{
-		Field:        field,
-		ModelPackage: r.modelPackage,
-		EntImport:    r.entGeneratedPackage,
+		Field:             field,
+		ModelPackage:      r.modelPackage,
+		EntImport:         r.entGeneratedPackage,
+		ArchivableSchemas: r.archivableSchemas,
 	}, []string{})
 }
 
 // renderList renders the list template
 func (r *ResolverPlugin) renderList(field *codegen.Field) string {
 	return renderTemplate("list.gotpl", &crudResolver{
-		Field:     field,
-		EntImport: r.entGeneratedPackage,
+		Field:             field,
+		EntImport:         r.entGeneratedPackage,
+		ArchivableSchemas: r.archivableSchemas,
 	}, []string{})
 }
 
@@ -254,4 +265,9 @@ func getInputObjectName(objectName string) string {
 	objectName = strings.ReplaceAll(objectName, UpdateOperation, "")
 
 	return strings.ReplaceAll(objectName, InputObject, "")
+}
+
+// getArchivedStatusEnum returns the archived status enum value for the entity
+func getArchivedStatusEnum(entityName string) string {
+	return "enums." + entityName + "StatusArchived"
 }
