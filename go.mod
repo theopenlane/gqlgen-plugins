@@ -13,7 +13,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/theopenlane/entx v0.7.2
 	github.com/vektah/gqlparser/v2 v2.5.30
-	golang.org/x/text v0.27.0
+	golang.org/x/text v0.28.0
 )
 
 require (
