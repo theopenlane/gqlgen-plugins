@@ -138,6 +138,8 @@ func (r *ResolverPlugin) mutationImplementer(f *codegen.Field) string {
 		return r.renderBulkUpload(f)
 	case BulkOperation:
 		return r.renderBulk(f)
+	case UploadOperation:
+		return r.renderBulkUpload(f)
 	case CreateOperation:
 		return r.renderCreate(f)
 	case UpdateOperation:
@@ -169,6 +171,8 @@ func crudType(f *codegen.Field) string {
 		return BulkCSVOperation
 	case strings.Contains(f.GoFieldName, BulkOperation):
 		return BulkOperation
+	case strings.Contains(f.GoFieldName, UploadOperation):
+		return UploadOperation
 	case strings.Contains(f.GoFieldName, CreateOperation):
 		return CreateOperation
 	case strings.Contains(f.GoFieldName, UpdateOperation),

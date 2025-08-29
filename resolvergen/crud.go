@@ -163,12 +163,13 @@ const (
 	BulkOperation    = "Bulk"
 	CSVOperation     = "CSV"
 	BulkCSVOperation = "BulkCSV"
+	UploadOperation  = "Upload"
 	Connection       = "Connection"
 	Payload          = "Payload"
 )
 
 // crudTypes is a list of CRUD operations that are included in the resolver name
-var stripStrings = []string{CreateOperation, UpdateOperation, DeleteOperation, BulkOperation, CSVOperation, Connection, Payload}
+var stripStrings = []string{CreateOperation, UpdateOperation, DeleteOperation, BulkOperation, CSVOperation, UploadOperation, Connection, Payload}
 
 // getEntityName returns the entity name by stripping the CRUD operation from the resolver name
 func getEntityName(name string) string {
