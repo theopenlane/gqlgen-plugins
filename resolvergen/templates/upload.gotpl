@@ -8,7 +8,9 @@
 {{ if $hasOwnerIDParam }}
 var {{ $entity | toLowerCamel }}Input generated.Create{{ $entity }}Input
 
-{{ $entity | toLowerCamel }}Input.OwnerID = ownerID
+if ownerID != nil && *ownerID != "" {
+	{{ $entity | toLowerCamel }}Input.OwnerID = ownerID
+}
 
 // set the organization in the auth context if its not done for us
 if err := setOrganizationInAuthContext(ctx, ownerID); err != nil {
