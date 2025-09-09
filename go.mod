@@ -1,6 +1,6 @@
 module github.com/theopenlane/gqlgen-plugins
 
-go 1.24.1
+go 1.25.1
 
 require (
 	entgo.io/contrib v0.7.0
@@ -13,7 +13,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/theopenlane/entx v0.14.2
 	github.com/vektah/gqlparser/v2 v2.5.30
-	golang.org/x/text v0.28.0
+	golang.org/x/text v0.29.0
 )
 
 require (
@@ -45,9 +45,9 @@ require (
 	go.opentelemetry.io/otel/metric v1.35.0 // indirect
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
-	golang.org/x/mod v0.26.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.34.0 // indirect
-	golang.org/x/tools v0.35.0 // indirect
+	golang.org/x/mod v0.27.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/sys v0.35.0 // indirect
+	golang.org/x/tools v0.36.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
