@@ -44,6 +44,8 @@ func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string, af
         {{- end }}
 	)
 
+  highlightTracker := newContextTracker(query)
+
 	r.withPool().SubmitMultipleAndWait([]func(){
         {{- range $object := $.Objects }}
 		func() {
@@ -52,6 +54,8 @@ func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string, af
 			if err != nil {
 				errors = append(errors, err)
 			}
+
+	    highlightSearchContext(ctx, query, {{ $object.Name | toLower }}Results, highlightTracker)
 		},
         {{- end }}
 	})
@@ -64,6 +68,7 @@ func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string, af
 	// return the results
 	res := &{{ .ModelPackage }}SearchResults{
 		TotalCount: 0,
+		SearchContext: highlightTracker.getContexts(),
 	}
 
 	{{- range $object := $.Objects }}
