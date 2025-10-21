@@ -1,7 +1,7 @@
 {{ reserveImport "context"  }}
 {{ reserveImport "encoding/csv" }}
 {{ reserveImport "os" }}
-{{ reserveImport "fmt" }}
+{{ reserveImport "sync" }}
 {{ reserveImport "github.com/rs/zerolog/log" }}
 {{ reserveImport "github.com/theopenlane/utils/rout" }}
 
@@ -85,21 +85,40 @@ func (r *mutationResolver) bulkDelete{{ $object.Name }} (ctx context.Context, id
 	}
 
 	deletedIDs := make([]string, 0, len(ids))
-	
-	// delete each {{ $object.Name | toLower }} individually to ensure proper cleanup
+	errors := make([]error, 0, len(ids))
+
+	var mu sync.Mutex
+
+	funcs := make([]func(), 0, len(ids))
 	for _, id := range ids {
-		if err := withTransactionalMutation(ctx).{{ $object.Name }}.DeleteOneID(id).Exec(ctx); err != nil {
-			log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to delete {{ $object.Name | toLower }} in bulk operation")
-			continue
-		}
+		funcs = append(funcs, func() {
+      // delete each {{ $object.Name | toLower }} individually to ensure proper cleanup
+			if err := withTransactionalMutation(ctx).{{ $object.Name }}.DeleteOneID(id).Exec(ctx); err != nil {
+				log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to delete {{ $object.Name | toLower }} in bulk operation")
+				mu.Lock()
+				errors = append(errors, err)
+				mu.Unlock()
+				return
+			}
 
-		// call edge cleanup if the function exists
-		if err := generated.{{ $object.Name }}EdgeCleanup(ctx, id); err != nil {
-			log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to cleanup {{ $object.Name | toLower }} edges in bulk operation")
-			continue
-		}
+			if err := generated.{{ $object.Name }}EdgeCleanup(ctx, id); err != nil {
+				log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to cleanup {{ $object.Name | toLower }} edges in bulk operation")
+				mu.Lock()
+				errors = append(errors, err)
+				mu.Unlock()
+				return
+			}
 
-		deletedIDs = append(deletedIDs, id)
+			mu.Lock()
+			deletedIDs = append(deletedIDs, id)
+			mu.Unlock()
+		})
+	}
+
+	r.withPool().SubmitMultipleAndWait(funcs)
+
+	if len(errors) > 0 {
+		log.Error().Int("deleted_items", len(deletedIDs)).Int("errors", len(errors)).Msg("some {{ $object.Name | toLower }} deletions failed")
 	}
 
 	return &{{ $root.ModelPackage }}{{ $object.Name }}BulkDeletePayload{
