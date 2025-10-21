@@ -1,7 +1,6 @@
 {{ reserveImport "context"  }}
 {{ reserveImport "encoding/csv" }}
 {{ reserveImport "os" }}
-{{ reserveImport "fmt" }}
 {{ reserveImport "sync" }}
 {{ reserveImport "github.com/rs/zerolog/log" }}
 {{ reserveImport "github.com/theopenlane/utils/rout" }}
@@ -119,7 +118,7 @@ func (r *mutationResolver) bulkDelete{{ $object.Name }} (ctx context.Context, id
 	r.withPool().SubmitMultipleAndWait(funcs)
 
 	if len(errors) > 0 {
-    log.Error().Msg("error occurred while performing bulk delete operation")
+		log.Error().Int("deleted_items", len(deletedIDs)).Int("errors", len(errors)).Msg("some {{ $object.Name | toLower }} deletions failed")
 	}
 
 	return &{{ $root.ModelPackage }}{{ $object.Name }}BulkDeletePayload{
