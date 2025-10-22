@@ -93,7 +93,7 @@ func (r *mutationResolver) bulkDelete{{ $object.Name }} (ctx context.Context, id
 	for _, id := range ids {
 		funcs = append(funcs, func() {
       // delete each {{ $object.Name | toLower }} individually to ensure proper cleanup
-			if err := withTransactionalMutation(ctx).{{ $object.Name }}.DeleteOneID(id).Exec(ctx); err != nil {
+			if err := r.db.{{ $object.Name }}.DeleteOneID(id).Exec(ctx); err != nil {
 				log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to delete {{ $object.Name | toLower }} in bulk operation")
 				mu.Lock()
 				errors = append(errors, err)
