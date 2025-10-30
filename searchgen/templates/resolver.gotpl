@@ -44,7 +44,9 @@ func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string, af
         {{- end }}
 	)
 
-  highlightTracker := newContextTracker(query)
+	highlightTracker := newContextTracker(query)
+
+	hasSearchContext := graphutils.CheckForRequestedField(ctx, "searchContext")
 
 	r.withPool().SubmitMultipleAndWait([]func(){
         {{- range $object := $.Objects }}
@@ -56,7 +58,9 @@ func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string, af
 				errors = append(errors, err)
 			}
 
-	    highlightSearchContext(ctx, query, {{ $object.Name | toLower }}Results, highlightTracker)
+			if hasSearchContext {
+				highlightSearchContext(ctx, query, {{ $object.Name | toLower }}Results, highlightTracker)
+			}
 		},
         {{- end }}
 	})
