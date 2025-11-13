@@ -6,7 +6,7 @@
 
 res, err := withTransactionalMutation(ctx).{{ $entity }}.Get(ctx, id)
 if err != nil {
-	return nil, parseRequestError(err, action{action: ActionUpdate, object: "{{ $entity | toLower }}"})
+	return nil, parseRequestError(ctx, err, action{action: ActionUpdate, object: "{{ $entity | toLower }}"})
 }
 
 {{ if $isOrgOwned }}
@@ -23,7 +23,7 @@ req := res.Update().SetInput(input){{- range $appendField := .AppendFields }}.{{
 
 res, err = req.Save(ctx)
 if err != nil {
-	return nil, parseRequestError(err, action{action: ActionUpdate, object: "{{ $entity | toLower }}"})
+	return nil, parseRequestError(ctx, err, action{action: ActionUpdate, object: "{{ $entity | toLower }}"})
 }
 
 return &{{ $modelPackage }}{{ $entity }}UpdatePayload{
