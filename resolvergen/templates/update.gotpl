@@ -1,5 +1,5 @@
 {{ reserveImport "github.com/theopenlane/utils/rout" }}
-{{ reserveImport "github.com/rs/zerolog/log" }}
+{{ reserveImport "github.com/theopenlane/core/pkg/logx" }}
 
 {{/* Include all custom fields */}}
 {{- if $.IncludeCustomUpdateFields }}

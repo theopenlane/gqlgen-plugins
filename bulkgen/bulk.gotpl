@@ -2,7 +2,7 @@
 {{ reserveImport "encoding/csv" }}
 {{ reserveImport "os" }}
 {{ reserveImport "sync" }}
-{{ reserveImport "github.com/rs/zerolog/log" }}
+{{ reserveImport "github.com/theopenlane/core/pkg/logx" }}
 {{ reserveImport "github.com/theopenlane/utils/rout" }}
 
 {{- if $.EntImport }}
@@ -28,7 +28,7 @@ func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, in
 
 	res, err := c.{{ $object.Name }}.CreateBulk(builders...).Save(ctx)
 	if err != nil {
-		return nil, parseRequestError(err, action{action: ActionCreate, object: "{{ $object.Name | toLower }}"})
+		return nil, parseRequestError(ctx, err, action{action: ActionCreate, object: "{{ $object.Name | toLower }}"})
 	}
 
 	// return response
@@ -46,25 +46,25 @@ func (r *mutationResolver) bulkUpdate{{ $object.Name }} (ctx context.Context, id
 	c := withTransactionalMutation(ctx)
 	results := make([]*generated.{{ $object.Name }}, 0, len(ids))
 	updatedIDs := make([]string, 0, len(ids))
-	
+
 	// update each {{ $object.Name | toLower }} individually to ensure proper validation
 	for _, id := range ids {
 		if id == "" {
-			log.Error().Msg("empty id in bulk update for {{ $object.Name | toLower }}")
+			logx.FromContext(ctx).Error().Msg("empty id in bulk update for {{ $object.Name | toLower }}")
 			continue
 		}
 
 		// get the existing entity first
 		existing, err := c.{{ $object.Name }}.Get(ctx, id)
 		if err != nil {
-			log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to get {{ $object.Name | toLower }} in bulk update operation")
+			logx.FromContext(ctx).Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to get {{ $object.Name | toLower }} in bulk update operation")
 			continue
 		}
 
 		// setup update request
 		updatedEntity, err := existing.Update().SetInput(input).Save(ctx)
 		if err != nil {
-			log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to update {{ $object.Name | toLower }} in bulk operation")
+			logx.FromContext(ctx).Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to update {{ $object.Name | toLower }} in bulk operation")
 			continue
 		}
 
@@ -94,7 +94,7 @@ func (r *mutationResolver) bulkDelete{{ $object.Name }} (ctx context.Context, id
 		funcs = append(funcs, func() {
       // delete each {{ $object.Name | toLower }} individually to ensure proper cleanup
 			if err := r.db.{{ $object.Name }}.DeleteOneID(id).Exec(ctx); err != nil {
-				log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to delete {{ $object.Name | toLower }} in bulk operation")
+				logx.FromContext(ctx).Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to delete {{ $object.Name | toLower }} in bulk operation")
 				mu.Lock()
 				errors = append(errors, err)
 				mu.Unlock()
@@ -102,7 +102,7 @@ func (r *mutationResolver) bulkDelete{{ $object.Name }} (ctx context.Context, id
 			}
 
 			if err := generated.{{ $object.Name }}EdgeCleanup(ctx, id); err != nil {
-				log.Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to cleanup {{ $object.Name | toLower }} edges in bulk operation")
+				logx.FromContext(ctx).Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to cleanup {{ $object.Name | toLower }} edges in bulk operation")
 				mu.Lock()
 				errors = append(errors, err)
 				mu.Unlock()
@@ -118,7 +118,7 @@ func (r *mutationResolver) bulkDelete{{ $object.Name }} (ctx context.Context, id
 	r.withPool().SubmitMultipleAndWait(funcs)
 
 	if len(errors) > 0 {
-		log.Error().Int("deleted_items", len(deletedIDs)).Int("errors", len(errors)).Msg("some {{ $object.Name | toLower }} deletions failed")
+		logx.FromContext(ctx).Error().Int("deleted_items", len(deletedIDs)).Int("errors", len(errors)).Msg("some {{ $object.Name | toLower }} deletions failed")
 	}
 
 	return &{{ $root.ModelPackage }}{{ $object.Name }}BulkDeletePayload{

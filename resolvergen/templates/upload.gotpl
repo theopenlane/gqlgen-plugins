@@ -1,4 +1,4 @@
-{{ reserveImport "github.com/rs/zerolog/log" }}
+{{ reserveImport "github.com/theopenlane/core/pkg/logx" }}
 
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 {{ $isOrgOwned := .Field | hasOwnerField  -}}
@@ -14,13 +14,13 @@ if ownerID != nil && *ownerID != "" {
 
 // set the organization in the auth context if its not done for us
 if err := setOrganizationInAuthContext(ctx, ownerID); err != nil {
-    log.Error().Err(err).Msg("failed to set organization in auth context")
+    logx.FromContext(ctx).Error().Err(err).Msg("failed to set organization in auth context")
     return nil, rout.NewMissingRequiredFieldError("owner_id")
 }
 
 res, err := withTransactionalMutation(ctx).{{ $entity }}.Create().SetInput({{ $entity | toLowerCamel }}Input).Save(ctx)
 if err != nil {
-	return nil, parseRequestError(err, action{action: ActionCreate, object: "{{ $entity | toLower }}"})
+	return nil, parseRequestError(ctx, err, action{action: ActionCreate, object: "{{ $entity | toLower }}"})
 }
 
 return &{{ $modelPackage }}{{ $entity }}CreatePayload{
@@ -30,9 +30,9 @@ return &{{ $modelPackage }}{{ $entity }}CreatePayload{
 {{ else }}
 data, err := unmarshalBulkData[generated.Create{{ $entity }}Input](input)
 if err != nil {
-	log.Error().Err(err).Msg("failed to unmarshal bulk data")
+	logx.FromContext(ctx).Error().Err(err).Msg("failed to unmarshal bulk data")
 
-	return nil, err
+	return nil, parseRequestError(ctx, err, action{action: ActionCreate, object: "{{ $entity | toLower }}"})
 }
 
 if len(data) == 0 {
@@ -43,7 +43,7 @@ if len(data) == 0 {
 // set the organization in the auth context if its not done for us
 // this will choose the first input OwnerID when using a personal access token
 if err := setOrganizationInAuthContextBulkRequest(ctx, data); err != nil {
-	log.Error().Err(err).Msg("failed to set organization in auth context")
+	logx.FromContext(ctx).Error().Err(err).Msg("failed to set organization in auth context")
 
 	return nil, rout.NewMissingRequiredFieldError("owner_id")
 }
