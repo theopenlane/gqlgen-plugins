@@ -67,7 +67,7 @@ func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string, af
 
 	// log the errors for debugging
 	if len(errors) > 0 {
-		log.Error().Errs("errors", errors).Msg("search failed for one or more entities")
+		logx.FromContext(ctx).Error().Errs("errors", errors).Msg("search failed for one or more entities")
 	}
 
 	// return the results

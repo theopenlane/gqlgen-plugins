@@ -3,11 +3,11 @@
 {{ $modelPackage := .ModelPackage | modelPackage -}}
 
 if err := withTransactionalMutation(ctx).{{ $entity }}.DeleteOneID(id).Exec(ctx); err != nil {
-	return nil, parseRequestError(err, action{action: ActionDelete, object: "{{ $entity | toLower }}"})
+	return nil, parseRequestError(ctx, err, action{action: ActionDelete, object: "{{ $entity | toLower }}"})
 }
 
 if err := generated.{{ $entity }}EdgeCleanup(ctx, id); err != nil {
-	return nil, newCascadeDeleteError(err)
+	return nil, newCascadeDeleteError(ctx, err)
 }
 
 return &{{ $modelPackage }}{{ $entity }}DeletePayload{

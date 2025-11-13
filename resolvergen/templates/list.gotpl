@@ -44,7 +44,7 @@ if orderBy == nil {
 
 query, err :=  withTransactionalMutation(ctx).{{ $entity }}.Query().CollectFields(ctx)
 if err != nil {
-	return nil, parseRequestError(err, action{action: ActionGet, object: "{{ $entity | toLower }}"})
+	return nil, parseRequestError(ctx, err, action{action: ActionGet, object: "{{ $entity | toLower }}"})
 }
 
 res, err := query.Paginate(
@@ -69,7 +69,7 @@ res, err := query.Paginate(
 	{{- end -}}
 )
 if err != nil {
-	return nil, parseRequestError(err, action{action: ActionGet, object: "{{ $entity | toLower }}"})
+	return nil, parseRequestError(ctx, err, action{action: ActionGet, object: "{{ $entity | toLower }}"})
 }
 
 return res, err

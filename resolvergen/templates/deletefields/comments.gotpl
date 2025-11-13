@@ -4,7 +4,7 @@ if data == nil {
 }
 
 if err := withTransactionalMutation(ctx).Note.DeleteOneID(*data).Exec(ctx); err != nil {
-    return parseRequestError(err, action{action: ActionDelete, object: "comment"})
+    return parseRequestError(ctx, err, action{action: ActionDelete, object: "comment"})
 }
 
 return nil
