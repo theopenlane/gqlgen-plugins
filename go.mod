@@ -5,7 +5,7 @@ go 1.25.1
 require (
 	entgo.io/contrib v0.7.0
 	entgo.io/ent v0.14.5
-	github.com/99designs/gqlgen v0.17.81
+	github.com/99designs/gqlgen v0.17.83
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/rs/zerolog v1.34.0
 	github.com/samber/lo v1.52.0
