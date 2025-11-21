@@ -1,6 +1,6 @@
 module github.com/theopenlane/gqlgen-plugins
 
-go 1.25.1
+go 1.25.4
 
 require (
 	entgo.io/contrib v0.7.0
@@ -11,14 +11,14 @@ require (
 	github.com/samber/lo v1.52.0
 	github.com/stoewer/go-strcase v1.3.1
 	github.com/stretchr/testify v1.11.1
-	github.com/theopenlane/entx v0.15.1
+	github.com/theopenlane/entx v0.16.1-0.20251121221644-ae8d0b0793a0
 	github.com/vektah/gqlparser/v2 v2.5.31
 	golang.org/x/text v0.31.0
 )
 
 require (
 	ariga.io/atlas v0.32.1-0.20250325101103-175b25e1c1b9 // indirect
-	github.com/XSAM/otelsql v0.39.0 // indirect
+	github.com/XSAM/otelsql v0.40.0 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
@@ -45,9 +45,9 @@ require (
 	go.opentelemetry.io/otel/metric v1.38.0 // indirect
 	go.opentelemetry.io/otel/trace v1.38.0 // indirect
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
-	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/mod v0.30.0 // indirect
 	golang.org/x/sync v0.18.0 // indirect
-	golang.org/x/sys v0.37.0 // indirect
-	golang.org/x/tools v0.38.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/tools v0.39.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

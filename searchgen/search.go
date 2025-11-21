@@ -189,7 +189,7 @@ func getInputData(data *codegen.Data) (SearchResolverBuild, error) {
 		if !strings.Contains(f.Name, "History") {
 			fields, adminFields := genhooks.GetSearchableFields(f.Name, graph)
 
-			if isSearchableObject(fields) {
+			if genhooks.HasMeaningfulSearchFields(fields) {
 				inputData.Objects = append(inputData.Objects, Object{
 					Name:        f.Name,
 					Fields:      fields,      // add the fields that are being searched
@@ -246,27 +246,6 @@ func isIDField(f string, idFields []string) bool {
 	for _, idField := range idFields {
 		if f == idField {
 			return true
-		}
-	}
-
-	return false
-}
-
-// isSearchableObject checks if the object is searchable based on the fields
-// if there are more than 2 fields, we can always add the entry
-// if there are 2 fields, we check if they are ID and DisplayID, if there is any other field, we can add the entry
-// if there is only one field, we don't add the entry, this is just the ID field
-func isSearchableObject(fields []genhooks.Field) bool {
-	switch {
-	// check if there are more than 2 fields, then we can add the entry because we can guarantee that there is at least one searchable field
-	case len(fields) > 2: //nolint:mnd
-		return true
-	case len(fields) == 2: //nolint:mnd
-		// check if the only fields are ID and DisplayID
-		for _, field := range fields {
-			if !strings.EqualFold(field.Name, "ID") && !strings.EqualFold(field.Name, "DisplayID") && !strings.EqualFold(field.Name, "Tags") {
-				return true
-			}
 		}
 	}
 
