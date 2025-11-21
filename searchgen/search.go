@@ -264,7 +264,7 @@ func isSearchableObject(fields []genhooks.Field) bool {
 	case len(fields) == 2: //nolint:mnd
 		// check if the only fields are ID and DisplayID
 		for _, field := range fields {
-			if !strings.EqualFold(field.Name, "ID") && !strings.EqualFold(field.Name, "DisplayID") {
+			if !strings.EqualFold(field.Name, "ID") && !strings.EqualFold(field.Name, "DisplayID") && !strings.EqualFold(field.Name, "Tags") {
 				return true
 			}
 		}
