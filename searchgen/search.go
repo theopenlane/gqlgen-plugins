@@ -43,6 +43,8 @@ type SearchPlugin struct {
 	// idFields are the fields that are IDs and should be searched with equals instead of like
 	// defaults to ID, DisplayID
 	idFields []string
+	// includeAdminSearch indicates whether to generate the admin search resolver
+	includeAdminSearch bool
 }
 
 // Name returns the name of the plugin
@@ -62,7 +64,10 @@ type Options func(*SearchPlugin)
 
 // NewWithOptions returns a new search plugin with the given options
 func NewWithOptions(opts ...Options) *SearchPlugin {
-	r := &SearchPlugin{}
+	r := &SearchPlugin{
+		// default to including the admin search resolver to keep backwards compatibility
+		includeAdminSearch: true,
+	}
 
 	for _, opt := range opts {
 		opt(r)
@@ -97,6 +102,13 @@ func WithRulePackage(pkg string) Options {
 func WithIDFields(fields []string) Options {
 	return func(p *SearchPlugin) {
 		p.idFields = fields
+	}
+}
+
+// WithIncludeAdminSearch enables the admin search resolver generation
+func WithIncludeAdminSearch(include bool) Options {
+	return func(p *SearchPlugin) {
+		p.includeAdminSearch = include
 	}
 }
 
@@ -166,6 +178,11 @@ func (r SearchPlugin) GenerateCode(data *codegen.Data) error {
 	inputData.Name = "Global"
 	if err := genSearchResolver(data, inputData, "search"); err != nil {
 		return err
+	}
+
+	// exit if we are not generating the admin search resolver
+	if !r.includeAdminSearch {
+		return nil
 	}
 
 	// generate the admin search resolver
