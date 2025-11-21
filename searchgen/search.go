@@ -105,7 +105,7 @@ func WithIDFields(fields []string) Options {
 	}
 }
 
-// WithAdminSearch enables the admin search resolver generation
+// WithIncludeAdminSearch enables the admin search resolver generation
 func WithIncludeAdminSearch(include bool) Options {
 	return func(p *SearchPlugin) {
 		p.includeAdminSearch = include
