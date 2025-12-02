@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	relativeSchemaPath = "./internal/ent/schema"
+	defaultRelativeSchemaPath = "./internal/ent/schema"
 )
 
 var defaultIDFields = []string{"ID", "DisplayID"}
@@ -40,6 +40,8 @@ type SearchPlugin struct {
 	rulePackage string
 	// modelPackage is the model package that holds the generated models for gql
 	modelPackage string
+	// schemaPath is the path to the ent schema
+	schemaPath string
 	// idFields are the fields that are IDs and should be searched with equals instead of like
 	// defaults to ID, DisplayID
 	idFields []string
@@ -67,6 +69,7 @@ func NewWithOptions(opts ...Options) *SearchPlugin {
 	r := &SearchPlugin{
 		// default to including the admin search resolver to keep backwards compatibility
 		includeAdminSearch: true,
+		schemaPath:         defaultRelativeSchemaPath,
 	}
 
 	for _, opt := range opts {
@@ -112,6 +115,13 @@ func WithIncludeAdminSearch(include bool) Options {
 	}
 }
 
+// WithSchemaPath sets the path to the ent schema
+func WithSchemaPath(path string) Options {
+	return func(p *SearchPlugin) {
+		p.schemaPath = path
+	}
+}
+
 // SearchResolverBuild is a struct to hold the objects for the bulk resolver
 type SearchResolverBuild struct {
 	// Name of the search type
@@ -142,7 +152,7 @@ type Object struct {
 
 // GenerateCode implements api.CodeGenerator to generate the search resolver and it's helper functions
 func (r SearchPlugin) GenerateCode(data *codegen.Data) error {
-	inputData, err := getInputData(data)
+	inputData, err := r.getInputData(data)
 	if err != nil {
 		return err
 	}
@@ -191,12 +201,12 @@ func (r SearchPlugin) GenerateCode(data *codegen.Data) error {
 	return genSearchResolver(data, inputData, "adminsearch")
 }
 
-func getInputData(data *codegen.Data) (SearchResolverBuild, error) {
+func (r *SearchPlugin) getInputData(data *codegen.Data) (SearchResolverBuild, error) {
 	inputData := SearchResolverBuild{
 		Objects: []Object{},
 	}
 
-	graph, err := entc.LoadGraph(relativeSchemaPath, &gen.Config{})
+	graph, err := entc.LoadGraph(r.schemaPath, &gen.Config{})
 	if err != nil {
 		return inputData, err
 	}
