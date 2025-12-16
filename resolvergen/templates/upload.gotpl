@@ -1,5 +1,9 @@
 {{ reserveImport "github.com/theopenlane/core/pkg/logx" }}
 
+{{- if $.GraphQLImport }}
+{{ reserveImport $.GraphQLImport }}
+{{- end }}
+
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 {{ $isOrgOwned := .Field | hasOwnerField  -}}
 {{ $hasOwnerIDParam := hasArgument "ownerID" .Field.FieldDefinition.Arguments -}}
@@ -18,9 +22,9 @@ if err := setOrganizationInAuthContext(ctx, ownerID); err != nil {
     return nil, rout.NewMissingRequiredFieldError("owner_id")
 }
 
-res, err := withTransactionalMutation(ctx).{{ $entity }}.Create().SetInput({{ $entity | toLowerCamel }}Input).Save(ctx)
+res, err := common.WithTransactionalMutation(ctx).{{ $entity }}.Create().SetInput({{ $entity | toLowerCamel }}Input).Save(ctx)
 if err != nil {
-	return nil, parseRequestError(ctx, err, action{action: ActionCreate, object: "{{ $entity | toLower }}"})
+	return nil, common.ParseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $entity | toLower }}"})
 }
 
 return &{{ $modelPackage }}{{ $entity }}CreatePayload{
@@ -32,7 +36,7 @@ data, err := unmarshalBulkData[generated.Create{{ $entity }}Input](input)
 if err != nil {
 	logx.FromContext(ctx).Error().Err(err).Msg("failed to unmarshal bulk data")
 
-	return nil, parseRequestError(ctx, err, action{action: ActionCreate, object: "{{ $entity | toLower }}"})
+	return nil, common.ParseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $entity | toLower }}"})
 }
 
 if len(data) == 0 {

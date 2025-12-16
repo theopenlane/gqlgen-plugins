@@ -1,5 +1,9 @@
 {{ reserveImport "github.com/theopenlane/gqlgen-plugins/graphutils" }}
 
+{{- if $.GraphQLImport }}
+{{ reserveImport $.GraphQLImport }}
+{{- end }}
+
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 
 {{- if eq $entity "Node" }}
@@ -7,12 +11,12 @@
 {{ $hasPlural := hasArgument "ids" .Field.FieldDefinition.Arguments }}
 
 {{- if $hasPlural }}
-res, err := withTransactionalMutation(ctx).Noders(ctx, ids)
+res, err := common.WithTransactionalMutation(ctx).Noders(ctx, ids)
 {{- else }}
-res, err := withTransactionalMutation(ctx).Noder(ctx, id)
+res, err := common.WithTransactionalMutation(ctx).Noder(ctx, id)
 {{- end }}
 if err != nil {
-	return nil, parseRequestError(ctx, err, action{action: ActionGet, object: "{{ $entity | toLower }}"})
+	return nil, common.ParseRequestError(ctx, err, common.Action{Action: common.ActionGet, Object: "{{ $entity | toLower }}"})
 }
 
 return res, nil
@@ -22,14 +26,14 @@ return res, nil
 {{ $import := print $.EntImport "/" $entity | toLower }}
 {{ reserveImport $import}}
 
-query, err := withTransactionalMutation(ctx).{{ $entity }}.Query().Where({{ $entity | toLower }}.ID(id)).CollectFields(ctx)
+query, err := common.WithTransactionalMutation(ctx).{{ $entity }}.Query().Where({{ $entity | toLower }}.ID(id)).CollectFields(ctx)
 if err != nil {
-	return nil, parseRequestError(ctx, err, action{action: ActionGet, object: "{{ $entity | toLower }}"})
+	return nil, common.ParseRequestError(ctx, err, common.Action{Action: common.ActionGet, Object: "{{ $entity | toLower }}"})
 }
 
 res, err := query.Only(ctx)
 if err != nil {
-	return nil, parseRequestError(ctx, err, action{action: ActionGet, object: "{{ $entity | toLower }}"})
+	return nil, common.ParseRequestError(ctx, err, common.Action{Action: common.ActionGet, Object: "{{ $entity | toLower }}"})
 }
 
 return res, nil

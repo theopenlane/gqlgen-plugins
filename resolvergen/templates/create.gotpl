@@ -1,9 +1,14 @@
 {{ reserveImport "github.com/theopenlane/utils/rout" }}
 {{ reserveImport "github.com/theopenlane/core/pkg/logx" }}
 
+{{- if $.GraphQLImport }}
+{{ reserveImport $.GraphQLImport }}
+{{- end }}
+
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 {{ $isOrgOwned := .Field | hasOwnerField  -}}
 {{ $modelPackage := .ModelPackage | modelPackage -}}
+
 
 {{ if $isOrgOwned }}
 // set the organization in the auth context if its not done for us
@@ -14,9 +19,9 @@ if err := setOrganizationInAuthContext(ctx, input.OwnerID); err != nil {
 }
 {{- end }}
 
-res, err := withTransactionalMutation(ctx).{{ $entity }}.Create().SetInput(input).Save(ctx)
+res, err := common.WithTransactionalMutation(ctx).{{ $entity }}.Create().SetInput(input).Save(ctx)
 if err != nil {
-	return nil, parseRequestError(ctx, err, action{action: ActionCreate, object: "{{ $entity | toLower }}"})
+	return nil, common.ParseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $entity | toLower }}"})
 }
 
 return &{{ $modelPackage }}{{ $entity }}CreatePayload{

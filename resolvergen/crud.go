@@ -27,6 +27,8 @@ type crudResolver struct {
 	ModelPackage string
 	// EntImport is the ent import for the generated types
 	EntImport string
+	// GraphQLImport is the import path for the graphql package
+	GraphQLImport string
 	// IncludeCustomUpdateFields is a flag to include custom fields
 	IncludeCustomUpdateFields bool
 	// ArchivableSchemas is a map of entity names that support archived status filtering
@@ -83,6 +85,7 @@ func (r *ResolverPlugin) renderCreate(field *codegen.Field) string {
 		Field:                     field,
 		ModelPackage:              r.modelPackage,
 		EntImport:                 r.entGeneratedPackage,
+		GraphQLImport:             r.graphqlImport,
 		IncludeCustomUpdateFields: r.includeCustomFields,
 		ArchivableSchemas:         r.archivableSchemas,
 	}, []string{})
@@ -97,6 +100,7 @@ func (r *ResolverPlugin) renderUpdate(field *codegen.Field) string {
 		AppendFields:              appendFields,
 		ModelPackage:              r.modelPackage,
 		EntImport:                 r.entGeneratedPackage,
+		GraphQLImport:             r.graphqlImport,
 		IncludeCustomUpdateFields: r.includeCustomFields,
 		ArchivableSchemas:         r.archivableSchemas,
 	}
@@ -110,6 +114,7 @@ func (r *ResolverPlugin) renderDelete(field *codegen.Field) string {
 		Field:                     field,
 		ModelPackage:              r.modelPackage,
 		EntImport:                 r.entGeneratedPackage,
+		GraphQLImport:             r.graphqlImport,
 		IncludeCustomUpdateFields: r.includeCustomFields,
 		ArchivableSchemas:         r.archivableSchemas,
 	}, []string{"deletefields/*.gotpl"})
@@ -121,6 +126,7 @@ func (r *ResolverPlugin) renderBulkUpload(field *codegen.Field) string {
 		Field:             field,
 		ModelPackage:      r.modelPackage,
 		EntImport:         r.entGeneratedPackage,
+		GraphQLImport:     r.graphqlImport,
 		ArchivableSchemas: r.archivableSchemas,
 	}, []string{})
 }
@@ -131,6 +137,7 @@ func (r *ResolverPlugin) renderBulk(field *codegen.Field) string {
 		Field:             field,
 		ModelPackage:      r.modelPackage,
 		EntImport:         r.entGeneratedPackage,
+		GraphQLImport:     r.graphqlImport,
 		ArchivableSchemas: r.archivableSchemas,
 	}, []string{})
 }
@@ -141,6 +148,7 @@ func (r *ResolverPlugin) renderQuery(field *codegen.Field) string {
 		Field:             field,
 		ModelPackage:      r.modelPackage,
 		EntImport:         r.entGeneratedPackage,
+		GraphQLImport:     r.graphqlImport,
 		ArchivableSchemas: r.archivableSchemas,
 	}, []string{})
 }
@@ -150,6 +158,7 @@ func (r *ResolverPlugin) renderList(field *codegen.Field) string {
 	return renderTemplate("list.gotpl", &crudResolver{
 		Field:             field,
 		EntImport:         r.entGeneratedPackage,
+		GraphQLImport:     r.graphqlImport,
 		ArchivableSchemas: r.archivableSchemas,
 	}, []string{})
 }

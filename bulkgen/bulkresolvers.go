@@ -52,6 +52,13 @@ func WithEntGeneratedPackage(entPackage string) Options {
 	}
 }
 
+// WithGraphQLImport sets the import path for the graphql package
+func WithGraphQLImport(graphqlImport string) Options {
+	return func(p *Plugin) {
+		p.GraphQLImport = graphqlImport
+	}
+}
+
 // WithCSVOutputPath sets the file path location that CSVs are written to
 func WithCSVOutputPath(path string) Options {
 	return func(p *Plugin) {
@@ -65,6 +72,8 @@ type Plugin struct {
 	ModelPackage string
 	// EntGeneratedPackage is the ent generated package that holds the generated types
 	EntGeneratedPackage string
+	// GraphQLImport is the import path for the graphql package
+	GraphQLImport string
 	// CSVOutputPath is the file path location that CSVs are written to
 	CSVOutputPath string
 }
@@ -82,6 +91,8 @@ type BulkResolverBuild struct {
 	ModelImport string
 	// EntImport is the ent generated package that holds the generated types
 	EntImport string
+	// GraphQLImport is the import path for the graphql package
+	GraphQLImport string
 	// ModelPackage is the package name for the gqlgen model
 	ModelPackage string
 }
@@ -111,9 +122,10 @@ func (m *Plugin) GenerateCode(data *codegen.Data) error {
 // used by the resolvergen plugin for each bulk resolver
 func (m *Plugin) generateSingleFile(data codegen.Data) error {
 	inputData := BulkResolverBuild{
-		Objects:     []Object{},
-		ModelImport: m.ModelPackage,
-		EntImport:   m.EntGeneratedPackage,
+		Objects:       []Object{},
+		ModelImport:   m.ModelPackage,
+		EntImport:     m.EntGeneratedPackage,
+		GraphQLImport: m.GraphQLImport,
 	}
 
 	// only add the model package if the import is not empty

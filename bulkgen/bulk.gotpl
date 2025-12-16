@@ -13,6 +13,10 @@
 {{ reserveImport $.ModelImport }}
 {{- end }}
 
+{{- if $.GraphQLImport }}
+{{ reserveImport $.GraphQLImport }}
+{{- end }}
+
 {{ $root := . }}
 
 {{ range $object := .Objects }}
@@ -20,7 +24,7 @@
 {{- if eq $object.OperationType "create" }}
 // bulkCreate{{ $object.Name }} uses the CreateBulk function to create multiple {{ $object.Name }} entities
 func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, input []*generated.Create{{ $object.Name }}Input) (*{{ $root.ModelPackage }}{{ $object.Name }}BulkCreatePayload, error) {
-    c := withTransactionalMutation(ctx)
+    c := common.WithTransactionalMutation(ctx)
 	builders := make([]*generated.{{ $object.Name }}Create, len(input))
 	for i, data := range input {
 		builders[i] = c.{{ $object.Name }}.Create().SetInput(*data)
@@ -28,7 +32,7 @@ func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, in
 
 	res, err := c.{{ $object.Name }}.CreateBulk(builders...).Save(ctx)
 	if err != nil {
-		return nil, parseRequestError(ctx, err, action{action: ActionCreate, object: "{{ $object.Name | toLower }}"})
+		return nil, common.ParseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $object.Name | toLower }}"})
 	}
 
 	// return response
@@ -43,7 +47,7 @@ func (r *mutationResolver) bulkUpdate{{ $object.Name }} (ctx context.Context, id
 		return nil, rout.NewMissingRequiredFieldError("ids")
 	}
 
-	c := withTransactionalMutation(ctx)
+	c := common.WithTransactionalMutation(ctx)
 	results := make([]*generated.{{ $object.Name }}, 0, len(ids))
 	updatedIDs := make([]string, 0, len(ids))
 
