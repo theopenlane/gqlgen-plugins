@@ -38,6 +38,8 @@ type SearchPlugin struct {
 	entGeneratedPackage string
 	// rulePackage is the package name for the privacy rules
 	rulePackage string
+	// graphqlImport is the import path for the graphql package
+	graphqlImport string
 	// modelPackage is the model package that holds the generated models for gql
 	modelPackage string
 	// schemaPath is the path to the ent schema
@@ -93,6 +95,13 @@ func WithEntGeneratedPackage(entPackage string) Options {
 	}
 }
 
+// WithGraphQLImport sets the import path for the graphql package
+func WithGraphQLImport(graphqlImport string) Options {
+	return func(p *SearchPlugin) {
+		p.graphqlImport = graphqlImport
+	}
+}
+
 // WithRulePackage sets the privacy rule package for the gqlgen model
 // this is used to check for system admins
 func WithRulePackage(pkg string) Options {
@@ -136,6 +145,8 @@ type SearchResolverBuild struct {
 	ModelImport string
 	// ModelPackage is the package name for the gqlgen model
 	ModelPackage string
+	// GraphQLImport is the import path for the graphql package
+	GraphQLImport string
 	// IDFields are the fields that are IDs and should be searched with equals instead of like
 	IDFields []string
 }
@@ -172,6 +183,7 @@ func (r SearchPlugin) GenerateCode(data *codegen.Data) error {
 	// add the generated package name
 	inputData.EntImport = r.entGeneratedPackage
 	inputData.RuleImport = r.rulePackage
+	inputData.GraphQLImport = r.graphqlImport
 
 	// set the default ID fields
 	inputData.IDFields = defaultIDFields

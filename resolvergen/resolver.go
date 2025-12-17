@@ -27,6 +27,8 @@ type ResolverPlugin struct {
 	modelPackage string
 	// entGeneratedPackage is the ent generated package that holds the generated types
 	entGeneratedPackage string
+	// graphqlImport is the import path for the graphql package
+	graphqlImport string
 	// includeCustomFields includes custom resolver fields for updates, templates
 	// are stored in `templates/updatefields/*.gotpl`, `templates/deletefields/*.gotpl`
 	// defaults to true
@@ -66,6 +68,13 @@ type Options func(*ResolverPlugin)
 func WithEntGeneratedPackage(entPackage string) Options {
 	return func(p *ResolverPlugin) {
 		p.entGeneratedPackage = entPackage
+	}
+}
+
+// WithGraphQLImport sets the import path for the graphql package
+func WithGraphQLImport(graphqlImport string) Options {
+	return func(p *ResolverPlugin) {
+		p.graphqlImport = graphqlImport
 	}
 }
 

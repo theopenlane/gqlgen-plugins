@@ -1,5 +1,10 @@
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName -}}
 {{ reserveImport "github.com/theopenlane/gqlgen-plugins/graphutils" }}
+
+{{- if $.GraphQLImport }}
+{{ reserveImport $.GraphQLImport }}
+{{- end }}
+
 {{ if and (hasArgument "where" .Field.FieldDefinition.Arguments) (hasStatusField $entity) }}{{ reserveImport "github.com/theopenlane/core/pkg/enums" }}{{ end }}
 {{ $hasAfter := hasArgument "after" .Field.FieldDefinition.Arguments }}
 {{ $hasFirst := hasArgument "first" .Field.FieldDefinition.Arguments }}
@@ -17,7 +22,7 @@ first, last = graphutils.SetFirstLastDefaults(first, last, r.maxResultLimit)
 {{ if and $hasWhere (hasStatusField $entity) }}
 // apply default status filtering to exclude archived items unless they are explicitly requested
 if where == nil {
-	where = &generated.{{ $entity }}WhereInput{}
+	where = &{{ $.EntPackage }}.{{ $entity }}WhereInput{}
 }
 if where.Status == nil && where.StatusNEQ == nil && where.StatusIn == nil && where.StatusNotIn == nil {
 	archivedStatus := {{ getArchivedStatusValue $entity }}
@@ -28,14 +33,14 @@ if where.Status == nil && where.StatusNEQ == nil && where.StatusIn == nil && whe
 {{ if $hasOrderBy }}
 if orderBy == nil {
 	{{- if $orderByIsList }}
-	orderBy = []*generated.{{ $entity }}Order{
+	orderBy = []*{{ $.EntPackage }}.{{ $entity }}Order{
 		{
-			Field:     generated.{{ $entity }}OrderFieldCreatedAt,
+			Field:     {{ $.EntPackage }}.{{ $entity }}OrderFieldCreatedAt,
 			Direction: entgql.OrderDirectionDesc,
 		},
 	{{- else }}
-	orderBy = &generated.{{ $entity }}Order{
-		Field: generated.{{ $entity }}OrderFieldCreatedAt,
+	orderBy = &{{ $.EntPackage }}.{{ $entity }}Order{
+		Field: {{ $.EntPackage }}.{{ $entity }}OrderFieldCreatedAt,
 		Direction: entgql.OrderDirectionDesc,
 	{{- end }}
 	}
@@ -44,7 +49,7 @@ if orderBy == nil {
 
 query, err :=  withTransactionalMutation(ctx).{{ $entity }}.Query().CollectFields(ctx)
 if err != nil {
-	return nil, parseRequestError(ctx, err, action{action: ActionGet, object: "{{ $entity | toLower }}"})
+	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionGet, Object: "{{ $entity | toLower }}"})
 }
 
 res, err := query.Paginate(
@@ -62,14 +67,14 @@ res, err := query.Paginate(
 	last,
 	{{- end -}}
 	{{- if $hasOrderBy }}
-	generated.With{{ $entity }}Order(orderBy),
+	{{ $.EntPackage }}.With{{ $entity }}Order(orderBy),
 	{{- end -}}
 	{{- if $hasWhere }}
-	generated.With{{ $entity }}Filter(where.Filter),
+	{{ $.EntPackage }}.With{{ $entity }}Filter(where.Filter),
 	{{- end -}}
 )
 if err != nil {
-	return nil, parseRequestError(ctx, err, action{action: ActionGet, object: "{{ $entity | toLower }}"})
+	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionGet, Object: "{{ $entity | toLower }}"})
 }
 
 return res, err

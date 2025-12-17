@@ -1,12 +1,16 @@
 {{ reserveImport "github.com/theopenlane/core/pkg/logx" }}
 
+{{- if $.GraphQLImport }}
+{{ reserveImport $.GraphQLImport }}
+{{- end }}
+
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 {{ $isOrgOwned := .Field | hasOwnerField  -}}
 {{ $hasOwnerIDParam := hasArgument "ownerID" .Field.FieldDefinition.Arguments -}}
 {{ $modelPackage := .ModelPackage | modelPackage -}}
 
 {{ if $hasOwnerIDParam }}
-var {{ $entity | toLowerCamel }}Input generated.Create{{ $entity }}Input
+var {{ $entity | toLowerCamel }}Input {{ $.EntPackage }}.Create{{ $entity }}Input
 
 if ownerID != nil && *ownerID != "" {
 	{{ $entity | toLowerCamel }}Input.OwnerID = ownerID
@@ -20,7 +24,7 @@ if err := setOrganizationInAuthContext(ctx, ownerID); err != nil {
 
 res, err := withTransactionalMutation(ctx).{{ $entity }}.Create().SetInput({{ $entity | toLowerCamel }}Input).Save(ctx)
 if err != nil {
-	return nil, parseRequestError(ctx, err, action{action: ActionCreate, object: "{{ $entity | toLower }}"})
+	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $entity | toLower }}"})
 }
 
 return &{{ $modelPackage }}{{ $entity }}CreatePayload{
@@ -28,11 +32,11 @@ return &{{ $modelPackage }}{{ $entity }}CreatePayload{
 }, nil
 
 {{ else }}
-data, err := unmarshalBulkData[generated.Create{{ $entity }}Input](input)
+data, err := unmarshalBulkData[{{ $.EntPackage }}.Create{{ $entity }}Input](input)
 if err != nil {
 	logx.FromContext(ctx).Error().Err(err).Msg("failed to unmarshal bulk data")
 
-	return nil, parseRequestError(ctx, err, action{action: ActionCreate, object: "{{ $entity | toLower }}"})
+	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $entity | toLower }}"})
 }
 
 if len(data) == 0 {

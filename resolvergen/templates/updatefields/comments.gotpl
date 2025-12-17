@@ -19,7 +19,7 @@ if data.{{ $inputType }}ID == nil {
 }
 
 if err := withTransactionalMutation(ctx).Note.Create().SetInput(*data).Exec(ctx); err != nil {
-    return parseRequestError(ctx, err, action{action: ActionCreate, object: "comment"})
+    return parseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "comment"})
 }
 
 return nil

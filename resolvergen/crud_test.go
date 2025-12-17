@@ -250,3 +250,48 @@ func TestIsListType(t *testing.T) {
 		})
 	}
 }
+func TestGetEntPackageFromImport(t *testing.T) {
+	testCases := []struct {
+		name       string
+		importPath string
+		expected   string
+	}{
+		{
+			name:       "standard import path",
+			importPath: "github.com/user/project/ent/generated",
+			expected:   "generated",
+		},
+		{
+			name:       "custom package name",
+			importPath: "github.com/user/project/ent/custom",
+			expected:   "custom",
+		},
+		{
+			name:       "single segment path",
+			importPath: "generated",
+			expected:   "generated",
+		},
+		{
+			name:       "path ending with slash",
+			importPath: "github.com/user/project/ent/",
+			expected:   "generated",
+		},
+		{
+			name:       "empty string",
+			importPath: "",
+			expected:   "generated",
+		},
+		{
+			name:       "nested path",
+			importPath: "github.com/user/project/internal/ent/schema",
+			expected:   "schema",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			res := getEntPackageFromImport(tc.importPath)
+			assert.Equal(t, tc.expected, res)
+		})
+	}
+}

@@ -16,6 +16,11 @@
 {{ reserveImport $.ModelImport }}
 {{- end }}
 
+{{- if $.GraphQLImport }}
+{{ reserveImport $.GraphQLImport }}
+{{- end }}
+
+
 {{ $root := . }}
 
 // Search is the resolver for the search field.
@@ -32,7 +37,7 @@ func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string, af
 	{{- end }}
 {{- end }}
 	if len(query) < 3 {
-		return nil, ErrSearchQueryTooShort
+		return nil, common.ErrSearchQueryTooShort
 	}
 
 	first, last = graphutils.SetFirstLastDefaults(first, last, r.maxResultLimit)
@@ -108,7 +113,7 @@ func (r *queryResolver) Admin{{ $object.Name }}Search(ctx context.Context, query
 {{- end}}
 
 	if err != nil {
-		return nil, ErrSearchFailed
+		return nil, common.ErrSearchFailed
 	}
 
 	// return the results

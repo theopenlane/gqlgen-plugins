@@ -7,6 +7,10 @@
 
 {{ reserveImport "entgo.io/contrib/entgql" }}
 
+{{- if $.GraphQLImport }}
+{{ reserveImport $.GraphQLImport }}
+{{- end }}
+
 import (
 {{- range $object := $.Objects }}
 	"{{ $.EntImport }}/{{ $object.Name | toLower }}"
