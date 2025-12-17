@@ -10,7 +10,7 @@
 {{ $modelPackage := .ModelPackage | modelPackage -}}
 
 {{ if $hasOwnerIDParam }}
-var {{ $entity | toLowerCamel }}Input generated.Create{{ $entity }}Input
+var {{ $entity | toLowerCamel }}Input {{ $.EntPackage }}.Create{{ $entity }}Input
 
 if ownerID != nil && *ownerID != "" {
 	{{ $entity | toLowerCamel }}Input.OwnerID = ownerID
@@ -32,7 +32,7 @@ return &{{ $modelPackage }}{{ $entity }}CreatePayload{
 }, nil
 
 {{ else }}
-data, err := unmarshalBulkData[generated.Create{{ $entity }}Input](input)
+data, err := unmarshalBulkData[{{ $.EntPackage }}.Create{{ $entity }}Input](input)
 if err != nil {
 	logx.FromContext(ctx).Error().Err(err).Msg("failed to unmarshal bulk data")
 
