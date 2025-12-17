@@ -19,9 +19,9 @@ if err := setOrganizationInAuthContext(ctx, input.OwnerID); err != nil {
 }
 {{- end }}
 
-res, err := common.WithTransactionalMutation(ctx).{{ $entity }}.Create().SetInput(input).Save(ctx)
+res, err := withTransactionalMutation(ctx).{{ $entity }}.Create().SetInput(input).Save(ctx)
 if err != nil {
-	return nil, common.ParseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $entity | toLower }}"})
+	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $entity | toLower }}"})
 }
 
 return &{{ $modelPackage }}{{ $entity }}CreatePayload{

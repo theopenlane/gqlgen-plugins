@@ -18,8 +18,8 @@ if data.{{ $inputType }}ID == nil {
     return newNotFoundError("{{ $inputType | toLower }}")
 }
 
-if err := common.WithTransactionalMutation(ctx).Note.Create().SetInput(*data).Exec(ctx); err != nil {
-    return common.ParseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "comment"})
+if err := withTransactionalMutation(ctx).Note.Create().SetInput(*data).Exec(ctx); err != nil {
+    return parseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "comment"})
 }
 
 return nil
@@ -33,21 +33,21 @@ return nil
 {{ $import := print $.EntImport "/" $entity | toLower }}
 {{ reserveImport $import}}
 
-res, err := common.WithTransactionalMutation(ctx).Note.Get(ctx, id)
+res, err := withTransactionalMutation(ctx).Note.Get(ctx, id)
 if err != nil {
-    return nil, common.ParseRequestError(ctx, err, action{action: ActionUpdate, object: "{{ $entity | toLower}}"})
+    return nil, parseRequestError(ctx, err, action{action: ActionUpdate, object: "{{ $entity | toLower}}"})
 }
 
 // setup update request
 req := res.Update().SetInput(input)
 
 if err = req.Exec(ctx); err != nil {
-    return nil, common.ParseRequestError(ctx, err, action{action: ActionUpdate, object: "{{ $entity | toLower}}"})
+    return nil, parseRequestError(ctx, err, action{action: ActionUpdate, object: "{{ $entity | toLower}}"})
 }
 
-objectRes, err := common.WithTransactionalMutation(ctx).{{ $entity }}.Query().Where({{ $entity | toLower}}.HasCommentsWith(note.ID(id))).Only(ctx)
+objectRes, err := withTransactionalMutation(ctx).{{ $entity }}.Query().Where({{ $entity | toLower}}.HasCommentsWith(note.ID(id))).Only(ctx)
 if err != nil {
-    return nil, common.ParseRequestError(ctx, err, action{action: ActionUpdate, object: "{{ $entity | toLower}}"})
+    return nil, parseRequestError(ctx, err, action{action: ActionUpdate, object: "{{ $entity | toLower}}"})
 }
 
 return &model.{{ $entity }}UpdatePayload{
@@ -62,8 +62,8 @@ if data == nil {
     return nil
 }
 
-if err := common.WithTransactionalMutation(ctx).{{ $entity }}.DeleteOneID(*data).Exec(ctx); err != nil {
-    return common.ParseRequestError(ctx, err, action{action: ActionDelete, object: "{{ $entity | toLower }}"})
+if err := withTransactionalMutation(ctx).{{ $entity }}.DeleteOneID(*data).Exec(ctx); err != nil {
+    return parseRequestError(ctx, err, action{action: ActionDelete, object: "{{ $entity | toLower }}"})
 }
 
 return nil

@@ -31,7 +31,7 @@ type searchResult[T any] struct {
 {{- range $object := $.Objects }}
 // search{{ $object.Name  }} searches for {{ $object.Name  }} based on the query string looking for matches
 func search{{ $object.Name | toPlural }}(ctx context.Context, query string, after *entgql.Cursor[string], first *int, before *entgql.Cursor[string], last *int) (*generated.{{ $object.Name }}Connection, error) {
-	request := common.WithTransactionalMutation(ctx).{{ $object.Name  }}.Query().
+	request := withTransactionalMutation(ctx).{{ $object.Name  }}.Query().
 		Where(
 			{{ $object.Name  | toLower }}.Or(
 				{{- range $i, $field := $object.Fields }}
@@ -66,7 +66,7 @@ func search{{ $object.Name | toPlural }}(ctx context.Context, query string, afte
 
 // search{{ $object.Name  }} searches for {{ $object.Name  }} based on the query string looking for matches
 func adminSearch{{ $object.Name | toPlural }}(ctx context.Context, query string, after *entgql.Cursor[string], first *int, before *entgql.Cursor[string], last *int) (*generated.{{ $object.Name }}Connection, error) {
-	request  := common.WithTransactionalMutation(ctx).{{ $object.Name  }}.Query().
+	request  := withTransactionalMutation(ctx).{{ $object.Name  }}.Query().
 		Where(
 			{{ $object.Name  | toLower }}.Or(
 				{{- range $i, $field := $object.AdminFields }}
