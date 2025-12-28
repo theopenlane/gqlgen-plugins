@@ -1,6 +1,6 @@
 module github.com/theopenlane/gqlgen-plugins
 
-go 1.25.4
+go 1.25.5
 
 require (
 	entgo.io/contrib v0.7.0
@@ -11,14 +11,14 @@ require (
 	github.com/samber/lo v1.52.0
 	github.com/stoewer/go-strcase v1.3.1
 	github.com/stretchr/testify v1.11.1
-	github.com/theopenlane/entx v0.20.0
+	github.com/theopenlane/entx v0.20.3
 	github.com/vektah/gqlparser/v2 v2.5.31
 	golang.org/x/text v0.32.0
 )
 
 require (
 	ariga.io/atlas v0.32.1-0.20250325101103-175b25e1c1b9 // indirect
-	github.com/XSAM/otelsql v0.40.0 // indirect
+	github.com/XSAM/otelsql v0.41.0 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
