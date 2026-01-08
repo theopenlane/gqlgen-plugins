@@ -119,7 +119,9 @@ func (r *mutationResolver) bulkDelete{{ $object.Name }} (ctx context.Context, id
 		})
 	}
 
-	r.withPool().SubmitMultipleAndWait(funcs)
+	if err := r.withPool().SubmitMultipleAndWait(funcs); err != nil {
+		return nil, err
+	}
 
 	if len(errors) > 0 {
 		logx.FromContext(ctx).Error().Int("deleted_items", len(deletedIDs)).Int("errors", len(errors)).Msg("some {{ $object.Name | toLower }} deletions failed")
