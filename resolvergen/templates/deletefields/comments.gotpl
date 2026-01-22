@@ -9,7 +9,7 @@ if data == nil {
 }
 
 if err := withTransactionalMutation(ctx).Note.DeleteOneID(*data).Exec(ctx); err != nil {
-    return parseRequestError(ctx, err, common.Action{Action: common.ActionDelete, object: "comment"})
+    return parseRequestError(ctx, err, common.Action{Action: common.ActionDelete, Object: "comment"})
 }
 
 return nil
