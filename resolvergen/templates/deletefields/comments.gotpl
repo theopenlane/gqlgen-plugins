@@ -1,10 +1,15 @@
+{{- if $.GraphQLImport }}
+{{ reserveImport $.GraphQLImport }}
+{{- end }}
+
+
 {{ define "deletecomment" }}
 if data == nil {
     return nil
 }
 
 if err := withTransactionalMutation(ctx).Note.DeleteOneID(*data).Exec(ctx); err != nil {
-    return parseRequestError(ctx, err, action{action: ActionDelete, object: "comment"})
+    return parseRequestError(ctx, err, common.Action{Action: common.ActionDelete, object: "comment"})
 }
 
 return nil

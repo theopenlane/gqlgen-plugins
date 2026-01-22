@@ -2,12 +2,16 @@
 {{/* We need the input type, not the entity because its creating a note under another object type */}}
 {{ $inputType := .Field.Object.Name | getInputObjectName}}
 
+{{- if $.GraphQLImport }}
+{{ reserveImport $.GraphQLImport }}
+{{- end }}
+
 if data == nil {
     return nil
 }
 
 // set the organization in the auth context if its not done for us
-if err := setOrganizationInAuthContext(ctx, data.OwnerID); err != nil {
+if err := common.SetOrganizationInAuthContext(ctx, data.OwnerID); err != nil {
     logx.FromContext(ctx).Error().Err(err).Msg("failed to set organization in auth context")
 
     return rout.NewMissingRequiredFieldError("owner_id")
@@ -35,19 +39,19 @@ return nil
 
 res, err := withTransactionalMutation(ctx).Note.Get(ctx, id)
 if err != nil {
-    return nil, parseRequestError(ctx, err, action{action: ActionUpdate, object: "{{ $entity | toLower}}"})
+    return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionUpdate, object: "{{ $entity | toLower}}"})
 }
 
 // setup update request
 req := res.Update().SetInput(input)
 
 if err = req.Exec(ctx); err != nil {
-    return nil, parseRequestError(ctx, err, action{action: ActionUpdate, object: "{{ $entity | toLower}}"})
+    return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionUpdate, object: "{{ $entity | toLower}}"})
 }
 
 objectRes, err := withTransactionalMutation(ctx).{{ $entity }}.Query().Where({{ $entity | toLower}}.HasCommentsWith(note.ID(id))).Only(ctx)
 if err != nil {
-    return nil, parseRequestError(ctx, err, action{action: ActionUpdate, object: "{{ $entity | toLower}}"})
+    return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionUpdate, object: "{{ $entity | toLower}}"})
 }
 
 return &model.{{ $entity }}UpdatePayload{
@@ -63,7 +67,7 @@ if data == nil {
 }
 
 if err := withTransactionalMutation(ctx).{{ $entity }}.DeleteOneID(*data).Exec(ctx); err != nil {
-    return parseRequestError(ctx, err, action{action: ActionDelete, object: "{{ $entity | toLower }}"})
+    return parseRequestError(ctx, err, common.Action{Action: common.ActionDelete, object: "{{ $entity | toLower }}"})
 }
 
 return nil

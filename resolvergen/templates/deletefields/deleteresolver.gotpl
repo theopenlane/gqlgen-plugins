@@ -1,9 +1,13 @@
+{{- if $.GraphQLImport }}
+{{ reserveImport $.GraphQLImport }}
+{{- end }}
+
 {{ define "baseResolver" }}
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 {{ $modelPackage := .ModelPackage | modelPackage -}}
 
 if err := withTransactionalMutation(ctx).{{ $entity }}.DeleteOneID(id).Exec(ctx); err != nil {
-	return nil, parseRequestError(ctx, err, action{action: ActionDelete, object: "{{ $entity | toLower }}"})
+	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionDelete, object: "{{ $entity | toLower }}"})
 }
 
 if err := generated.{{ $entity }}EdgeCleanup(ctx, id); err != nil {
