@@ -11,7 +11,7 @@ if err := withTransactionalMutation(ctx).{{ $entity }}.DeleteOneID(id).Exec(ctx)
 }
 
 if err := generated.{{ $entity }}EdgeCleanup(ctx, id); err != nil {
-	return nil, newCascadeDeleteError(ctx, err)
+	return nil, common.NewCascadeDeleteError(ctx, err)
 }
 
 return &{{ $modelPackage }}{{ $entity }}DeletePayload{
