@@ -98,6 +98,10 @@ func (r *controlResolver) WorkflowTimeline(ctx context.Context, obj *generated.C
 	if !strings.Contains(helperStr, "example.com/test/common/enums") {
 		t.Fatalf("expected helper file to include enums import")
 	}
+
+	if !strings.Contains(helperStr, "workflowResolverActiveInstance") {
+		t.Fatalf("expected helper file to include active instance helper")
+	}
 }
 
 func TestRenderWorkflowTemplate(t *testing.T) {

@@ -19,6 +19,7 @@ const workflowResolverHelperFile = "workflow_resolvers_gen.go"
 var workflowResolverHelpers = map[string]string{
 	"HasPendingWorkflow":      "workflowResolverHasPending",
 	"HasWorkflowHistory":      "workflowResolverHasHistory",
+	"ActiveWorkflowInstance":  "workflowResolverActiveInstance",
 	"ActiveWorkflowInstances": "workflowResolverActiveInstances",
 	"WorkflowTimeline":        "workflowResolverTimeline",
 }
@@ -325,6 +326,21 @@ func workflowResolverActiveInstances(ctx context.Context, objectType string, obj
 	}
 
 	return res, nil
+}
+
+// workflowResolverActiveInstance returns the most recent active workflow instance for the object.
+// If none exist, it returns nil without error.
+func workflowResolverActiveInstance(ctx context.Context, objectType string, objectID string) (*generated.WorkflowInstance, error) {
+	instances, err := workflowResolverActiveInstances(ctx, objectType, objectID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(instances) == 0 {
+		return nil, nil
+	}
+
+	return instances[0], nil
 }
 
 // workflowResolverTimeline returns the workflow event timeline for an object across all its workflow instances.
