@@ -122,7 +122,16 @@ func (r *ResolverPlugin) GenerateCode(data *codegen.Data) error {
 	}
 
 	// use the default resolver plugin to generate the code
-	return r.Plugin.GenerateCode(data)
+	if err := r.Plugin.GenerateCode(data); err != nil {
+		return err
+	}
+
+	resolverDir := data.Config.Resolver.Dir()
+	if resolverDir == "" {
+		return nil
+	}
+
+	return UpdateWorkflowResolvers(resolverDir)
 }
 
 // isMutation returns true if the field is a mutation
