@@ -109,6 +109,8 @@ func (r *ResolverPlugin) Implement(s string, f *codegen.Field) (val string) {
 		return r.mutationImplementer(f)
 	case isQuery(f):
 		return r.queryImplementer(f)
+	case isWorkflowResolverField(f):
+		return r.workflowImplementer(f)
 	default:
 		return fmt.Sprintf(defaultImplementation, f.GoFieldName, f.Name)
 	}
@@ -149,6 +151,19 @@ func isInput(f *codegen.Field) bool {
 	return strings.Contains(f.Object.Name, "Input")
 }
 
+func isWorkflowResolverField(f *codegen.Field) bool {
+	if f == nil || f.Object == nil {
+		return false
+	}
+
+	if isMutation(f) || isQuery(f) || isInput(f) {
+		return false
+	}
+
+	_, ok := workflowResolverHelpers[f.GoFieldName]
+	return ok
+}
+
 // mutationImplementer returns the implementation for the mutation
 func (r *ResolverPlugin) mutationImplementer(f *codegen.Field) string {
 	switch crudType(f) {
@@ -180,6 +195,29 @@ func (r *ResolverPlugin) queryImplementer(f *codegen.Field) string {
 	}
 
 	return r.renderQuery(f)
+}
+
+func (r *ResolverPlugin) workflowImplementer(f *codegen.Field) string {
+	helperName, ok := workflowResolverHelpers[f.GoFieldName]
+	if !ok {
+		return fmt.Sprintf(defaultImplementation, f.GoFieldName, f.Name)
+	}
+
+	objectType := ""
+	if f.Object != nil {
+		objectType = f.Object.Name
+	}
+
+	if objectType == "" {
+		return fmt.Sprintf(defaultImplementation, f.GoFieldName, f.Name)
+	}
+
+	return renderWorkflowTemplate(&workflowResolverTemplate{
+		HelperName: helperName,
+		ObjectType: objectType,
+		EntPackage: getEntPackageFromImport(r.entGeneratedPackage),
+		IsTimeline: helperName == "workflowResolverTimeline",
+	})
 }
 
 // crudType returns the type of CRUD operation

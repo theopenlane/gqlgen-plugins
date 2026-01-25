@@ -1,0 +1,5 @@
+{{- if .IsTimeline }}
+return {{ .HelperName }}(ctx, {{ .EntPackage }}.Type{{ .ObjectType }}, obj.ID, after, first, before, last, orderBy, where, includeEmitFailures)
+{{- else }}
+return {{ .HelperName }}(ctx, {{ .EntPackage }}.Type{{ .ObjectType }}, obj.ID)
+{{- end }}

@@ -10,8 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"golang.org/x/tools/go/ast/astutil"
 )
 
 // workflowResolverHelperFile is the filename for the generated workflow resolver helper functions
@@ -29,8 +27,6 @@ var workflowResolverHelpers = map[string]string{
 type workflowResolverUpdate struct {
 	// foundWorkflow indicates whether any workflow resolver methods were found in the file
 	foundWorkflow bool
-	// changed indicates whether any modifications were made to the file
-	changed bool
 	// packageName is the Go package name extracted from the file
 	packageName string
 	// generatedImportPath is the import path for the ent generated package
@@ -39,8 +35,8 @@ type workflowResolverUpdate struct {
 	graphCommonImportPath string
 }
 
-// UpdateWorkflowResolvers scaffolds workflow resolver logic by replacing gqlgen panic stubs
-// and adding shared helper implementations when workflow fields are present.
+// UpdateWorkflowResolvers generates shared workflow resolver helper implementations
+// when workflow fields are present in resolver files.
 func UpdateWorkflowResolvers(graphResolverDir string) error {
 	if graphResolverDir == "" {
 		return ErrGraphResolverDirRequired
@@ -121,9 +117,8 @@ func UpdateWorkflowResolvers(graphResolverDir string) error {
 	return nil
 }
 
-// updateWorkflowResolverFile parses a single resolver file and replaces gqlgen panic stubs
-// for workflow methods with calls to shared helper functions. Returns state indicating
-// whether workflow methods were found and if the file was modified.
+// updateWorkflowResolverFile parses a single resolver file and collects metadata
+// about workflow resolver methods for helper generation.
 func updateWorkflowResolverFile(path string) (workflowResolverUpdate, error) {
 	update := workflowResolverUpdate{}
 	fset := token.NewFileSet()
@@ -143,175 +138,15 @@ func updateWorkflowResolverFile(path string) (workflowResolverUpdate, error) {
 			continue
 		}
 
-		helperName, ok := workflowResolverHelpers[fn.Name.Name]
+		_, ok = workflowResolverHelpers[fn.Name.Name]
 		if !ok {
 			continue
 		}
 
 		update.foundWorkflow = true
-
-		objType := workflowResolverObjectType(fn.Type)
-		if objType == "" {
-			continue
-		}
-
-		if workflowResolverUsesHelper(fn.Body, helperName) {
-			continue
-		}
-
-		if !workflowResolverIsStub(fn.Body) {
-			continue
-		}
-
-		body, err := buildWorkflowResolverBody(helperName, objType)
-		if err != nil {
-			return update, err
-		}
-
-		fn.Body = body
-		update.changed = true
-	}
-
-	if !update.changed {
-		return update, nil
-	}
-
-	if !astutil.UsesImport(file, "fmt") {
-		astutil.DeleteImport(fset, file, "fmt")
-	}
-
-	var buf bytes.Buffer
-	if err := format.Node(&buf, fset, file); err != nil {
-		return update, fmt.Errorf("format file: %w", err)
-	}
-
-	if err := os.WriteFile(path, buf.Bytes(), 0o600); err != nil { // nolint:mnd
-		return update, fmt.Errorf("write file: %w", err)
 	}
 
 	return update, nil
-}
-
-// workflowResolverIsStub checks if a function body is a gqlgen-generated panic stub.
-// These stubs have the form: panic(fmt.Errorf("not implemented: ..."))
-func workflowResolverIsStub(body *ast.BlockStmt) bool {
-	if body == nil || len(body.List) != 1 {
-		return false
-	}
-
-	exprStmt, ok := body.List[0].(*ast.ExprStmt)
-	if !ok {
-		return false
-	}
-
-	call, ok := exprStmt.X.(*ast.CallExpr)
-	if !ok {
-		return false
-	}
-
-	if ident, ok := call.Fun.(*ast.Ident); !ok || ident.Name != "panic" {
-		return false
-	}
-
-	if len(call.Args) != 1 {
-		return false
-	}
-
-	innerCall, ok := call.Args[0].(*ast.CallExpr)
-	if !ok {
-		return false
-	}
-
-	selector, ok := innerCall.Fun.(*ast.SelectorExpr)
-	if !ok {
-		return false
-	}
-
-	pkgIdent, ok := selector.X.(*ast.Ident)
-	if !ok || pkgIdent.Name != "fmt" {
-		return false
-	}
-
-	return selector.Sel.Name == "Errorf"
-}
-
-// workflowResolverUsesHelper checks if a function body already calls the specified helper.
-// This prevents re-processing files that have already been updated.
-func workflowResolverUsesHelper(body *ast.BlockStmt, helperName string) bool {
-	if body == nil || len(body.List) != 1 {
-		return false
-	}
-
-	ret, ok := body.List[0].(*ast.ReturnStmt)
-	if !ok || len(ret.Results) != 1 {
-		return false
-	}
-
-	call, ok := ret.Results[0].(*ast.CallExpr)
-	if !ok {
-		return false
-	}
-
-	ident, ok := call.Fun.(*ast.Ident)
-	if !ok {
-		return false
-	}
-
-	return ident.Name == helperName
-}
-
-// workflowResolverObjectType extracts the ent entity type name from a resolver function's parameters.
-// It looks for a parameter of type *generated.TypeName and returns "TypeName".
-func workflowResolverObjectType(fnType *ast.FuncType) string {
-	if fnType == nil || fnType.Params == nil {
-		return ""
-	}
-
-	for _, field := range fnType.Params.List {
-		star, ok := field.Type.(*ast.StarExpr)
-		if !ok {
-			continue
-		}
-
-		selector, ok := star.X.(*ast.SelectorExpr)
-		if !ok {
-			continue
-		}
-
-		pkgIdent, ok := selector.X.(*ast.Ident)
-		if !ok || pkgIdent.Name != "generated" {
-			continue
-		}
-
-		return selector.Sel.Name
-	}
-
-	return ""
-}
-
-// buildWorkflowResolverBody constructs an AST block statement that returns a call to the helper function.
-// For most helpers: return helperName(ctx, generated.TypeObjType, obj.ID)
-// For timeline: return helperName(ctx, generated.TypeObjType, obj.ID, after, first, before, last, orderBy, where, includeEmitFailures)
-func buildWorkflowResolverBody(helperName, objType string) (*ast.BlockStmt, error) {
-	var callExpr string
-	if helperName == "workflowResolverTimeline" {
-		callExpr = fmt.Sprintf("%s(ctx, generated.Type%s, obj.ID, after, first, before, last, orderBy, where, includeEmitFailures)", helperName, objType)
-	} else {
-		callExpr = fmt.Sprintf("%s(ctx, generated.Type%s, obj.ID)", helperName, objType)
-	}
-
-	expr, err := parser.ParseExpr(callExpr)
-	if err != nil {
-		return nil, fmt.Errorf("build helper call: %w", err)
-	}
-
-	return &ast.BlockStmt{
-		List: []ast.Stmt{
-			&ast.ReturnStmt{
-				Results: []ast.Expr{expr},
-			},
-		},
-	}, nil
 }
 
 // findGeneratedImportPath searches the file's imports for the ent generated package path.

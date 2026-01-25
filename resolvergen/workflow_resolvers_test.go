@@ -36,26 +36,25 @@ func TestUpdateWorkflowResolvers(t *testing.T) {
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/contrib/entgql"
 	"example.com/test/internal/ent/generated"
 )
 
 func (r *controlResolver) HasPendingWorkflow(ctx context.Context, obj *generated.Control) (bool, error) {
-	panic(fmt.Errorf("not implemented: HasPendingWorkflow - hasPendingWorkflow"))
+	return workflowResolverHasPending(ctx, generated.TypeControl, obj.ID)
 }
 
 func (r *controlResolver) HasWorkflowHistory(ctx context.Context, obj *generated.Control) (bool, error) {
-	panic(fmt.Errorf("not implemented: HasWorkflowHistory - hasWorkflowHistory"))
+	return workflowResolverHasHistory(ctx, generated.TypeControl, obj.ID)
 }
 
 func (r *controlResolver) ActiveWorkflowInstances(ctx context.Context, obj *generated.Control) ([]*generated.WorkflowInstance, error) {
-	panic(fmt.Errorf("not implemented: ActiveWorkflowInstances - activeWorkflowInstances"))
+	return workflowResolverActiveInstances(ctx, generated.TypeControl, obj.ID)
 }
 
 func (r *controlResolver) WorkflowTimeline(ctx context.Context, obj *generated.Control, after *entgql.Cursor[string], first *int, before *entgql.Cursor[string], last *int, orderBy []*generated.WorkflowEventOrder, where *generated.WorkflowEventWhereInput, includeEmitFailures *bool) (*generated.WorkflowEventConnection, error) {
-	panic(fmt.Errorf("not implemented: WorkflowTimeline - workflowTimeline"))
+	return workflowResolverTimeline(ctx, generated.TypeControl, obj.ID, after, first, before, last, orderBy, where, includeEmitFailures)
 }
 `
 
@@ -63,6 +62,8 @@ func (r *controlResolver) WorkflowTimeline(ctx context.Context, obj *generated.C
 	if err := os.WriteFile(resolverPath, []byte(source), 0o600); err != nil { // nolint:mnd
 		t.Fatalf("write resolver file: %v", err)
 	}
+
+	original := source
 
 	if err := UpdateWorkflowResolvers(graphDir); err != nil {
 		t.Fatalf("UpdateWorkflowResolvers failed: %v", err)
@@ -74,29 +75,8 @@ func (r *controlResolver) WorkflowTimeline(ctx context.Context, obj *generated.C
 	}
 
 	updatedStr := string(updated)
-
-	normalizedStr := normalizeWhitespace(updatedStr)
-	if strings.Contains(updatedStr, "\"fmt\"") {
-		t.Fatalf("expected fmt import to be removed")
-	}
-
-	if !strings.Contains(normalizedStr, "return workflowResolverHasPending(ctx, generated.TypeControl, obj.ID)") {
-		t.Fatalf("expected HasPendingWorkflow to call helper")
-	}
-
-	if !strings.Contains(normalizedStr, "return workflowResolverHasHistory(ctx, generated.TypeControl, obj.ID)") {
-		t.Fatalf("expected HasWorkflowHistory to call helper")
-	}
-
-	if !strings.Contains(normalizedStr, "return workflowResolverActiveInstances(ctx, generated.TypeControl, obj.ID)") {
-		t.Fatalf("expected ActiveWorkflowInstances to call helper")
-	}
-
-	// Note: Go formatter may add trailing comma for multi-line calls, so check with or without it
-	timelineCall := "return workflowResolverTimeline(ctx, generated.TypeControl, obj.ID, after, first, before, last, orderBy, where, includeEmitFailures"
-	if !strings.Contains(normalizedStr, timelineCall) {
-		t.Logf("normalized output:\n%s", normalizedStr)
-		t.Fatalf("expected WorkflowTimeline to call helper with pagination params")
+	if updatedStr != original {
+		t.Fatalf("expected resolver file to remain unchanged")
 	}
 
 	helperPath := filepath.Join(graphDir, workflowResolverHelperFile)
@@ -117,5 +97,33 @@ func (r *controlResolver) WorkflowTimeline(ctx context.Context, obj *generated.C
 
 	if !strings.Contains(helperStr, "example.com/test/common/enums") {
 		t.Fatalf("expected helper file to include enums import")
+	}
+}
+
+func TestRenderWorkflowTemplate(t *testing.T) {
+	t.Parallel()
+
+	rendered := renderWorkflowTemplate(&workflowResolverTemplate{
+		HelperName: "workflowResolverHasPending",
+		ObjectType: "Control",
+		EntPackage: "generated",
+	})
+
+	normalized := normalizeWhitespace(rendered)
+	if !strings.Contains(normalized, "return workflowResolverHasPending(ctx, generated.TypeControl, obj.ID)") {
+		t.Fatalf("expected template to render helper call")
+	}
+
+	renderedTimeline := renderWorkflowTemplate(&workflowResolverTemplate{
+		HelperName: "workflowResolverTimeline",
+		ObjectType: "Control",
+		EntPackage: "generated",
+		IsTimeline: true,
+	})
+
+	normalizedTimeline := normalizeWhitespace(renderedTimeline)
+	timelineCall := "return workflowResolverTimeline(ctx, generated.TypeControl, obj.ID, after, first, before, last, orderBy, where, includeEmitFailures"
+	if !strings.Contains(normalizedTimeline, timelineCall) {
+		t.Fatalf("expected timeline template to render helper call with params")
 	}
 }
