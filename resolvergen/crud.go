@@ -31,6 +31,10 @@ type crudResolver struct {
 	EntPackage string
 	// GraphQLImport is the import path for the graphql package
 	GraphQLImport string
+	// CSVGeneratedImport is the import path for the csvgenerated package
+	CSVGeneratedImport string
+	// CSVGeneratedPackage is the package name for the csvgenerated package
+	CSVGeneratedPackage string
 	// IncludeCustomUpdateFields is a flag to include custom fields
 	IncludeCustomUpdateFields bool
 	// ArchivableSchemas is a map of entity names that support archived status filtering
@@ -141,12 +145,14 @@ func (r *ResolverPlugin) renderDelete(field *codegen.Field) string {
 // renderBulkUpload renders the bulk upload template
 func (r *ResolverPlugin) renderBulkUpload(field *codegen.Field) string {
 	return renderTemplate("upload.gotpl", &crudResolver{
-		Field:             field,
-		ModelPackage:      r.modelPackage,
-		EntImport:         r.entGeneratedPackage,
-		EntPackage:        getEntPackageFromImport(r.entGeneratedPackage),
-		GraphQLImport:     r.graphqlImport,
-		ArchivableSchemas: r.archivableSchemas,
+		Field:               field,
+		ModelPackage:        r.modelPackage,
+		EntImport:           r.entGeneratedPackage,
+		EntPackage:          getEntPackageFromImport(r.entGeneratedPackage),
+		GraphQLImport:       r.graphqlImport,
+		CSVGeneratedImport:  r.csvGeneratedPackage,
+		CSVGeneratedPackage: getEntPackageFromImport(r.csvGeneratedPackage),
+		ArchivableSchemas:   r.archivableSchemas,
 	}, []string{})
 }
 

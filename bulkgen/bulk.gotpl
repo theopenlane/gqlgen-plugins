@@ -1,6 +1,4 @@
 {{ reserveImport "context"  }}
-{{ reserveImport "encoding/csv" }}
-{{ reserveImport "os" }}
 {{ reserveImport "sync" }}
 {{ reserveImport "github.com/theopenlane/core/pkg/logx" }}
 {{ reserveImport "github.com/theopenlane/utils/rout" }}
@@ -15,6 +13,10 @@
 
 {{- if $.GraphQLImport }}
 {{ reserveImport $.GraphQLImport }}
+{{- end }}
+
+{{- if $.CSVGeneratedImport }}
+{{ reserveImport $.CSVGeneratedImport }}
 {{- end }}
 
 {{ $root := . }}
@@ -81,6 +83,49 @@ func (r *mutationResolver) bulkUpdate{{ $object.Name }} (ctx context.Context, id
 		UpdatedIDs: updatedIDs,
 	}, nil
 }
+{{- if and $object.HasCSVUpdateMutation $root.CSVGeneratedImport }}
+
+// bulkUpdateCSV{{ $object.Name }} updates multiple {{ $object.Name }} entities from CSV data with per-row values
+func (r *mutationResolver) bulkUpdateCSV{{ $object.Name }} (ctx context.Context, inputs []*csvgenerated.{{ $object.Name }}CSVUpdateInput) (*{{ $root.ModelPackage }}{{ $object.Name }}BulkUpdatePayload, error) {
+	if len(inputs) == 0 {
+		return nil, rout.NewMissingRequiredFieldError("input")
+	}
+
+	c := withTransactionalMutation(ctx)
+	results := make([]*generated.{{ $object.Name }}, 0, len(inputs))
+	updatedIDs := make([]string, 0, len(inputs))
+
+	// update each {{ $object.Name | toLower }} individually with its own input values
+	for _, input := range inputs {
+		if input == nil || input.ID == "" {
+			logx.FromContext(ctx).Error().Msg("empty id in CSV bulk update for {{ $object.Name | toLower }}")
+			continue
+		}
+
+		// get the existing entity first
+		existing, err := c.{{ $object.Name }}.Get(ctx, input.ID)
+		if err != nil {
+			logx.FromContext(ctx).Error().Err(err).Str("{{ $object.Name | toLower }}_id", input.ID).Msg("failed to get {{ $object.Name | toLower }} in CSV bulk update operation")
+			continue
+		}
+
+		// setup update request with this row's input values
+		updatedEntity, err := existing.Update().SetInput(input.Input).Save(ctx)
+		if err != nil {
+			logx.FromContext(ctx).Error().Err(err).Str("{{ $object.Name | toLower }}_id", input.ID).Msg("failed to update {{ $object.Name | toLower }} in CSV bulk operation")
+			return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionUpdate, Object: "{{ $object.Name | toLower }}"})
+		}
+
+		results = append(results, updatedEntity)
+		updatedIDs = append(updatedIDs, input.ID)
+	}
+
+	return &{{ $root.ModelPackage }}{{ $object.Name }}BulkUpdatePayload{
+		{{ $object.PluralName }}: results,
+		UpdatedIDs: updatedIDs,
+	}, nil
+}
+{{- end }}
 {{- else if eq $object.OperationType "delete" }}
 // bulkDelete{{ $object.Name }} deletes multiple {{ $object.Name }} entities by their IDs
 func (r *mutationResolver) bulkDelete{{ $object.Name }} (ctx context.Context, ids []string) (*{{ $root.ModelPackage }}{{ $object.Name }}BulkDeletePayload, error) {

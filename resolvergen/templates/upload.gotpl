@@ -1,13 +1,19 @@
 {{ reserveImport "github.com/theopenlane/core/pkg/logx" }}
+{{ reserveImport "github.com/theopenlane/utils/rout" }}
 
 {{- if $.GraphQLImport }}
 {{ reserveImport $.GraphQLImport }}
+{{- end }}
+
+{{- if $.CSVGeneratedImport }}
+{{ reserveImport $.CSVGeneratedImport }}
 {{- end }}
 
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
 {{ $isOrgOwned := .Field | hasOwnerField  -}}
 {{ $hasOwnerIDParam := hasArgument "ownerID" .Field.FieldDefinition.Arguments -}}
 {{ $modelPackage := .ModelPackage | modelPackage -}}
+{{ $isUpdate := contains .Field.GoFieldName "Update" -}}
 
 {{ if $hasOwnerIDParam }}
 var {{ $entity | toLowerCamel }}Input {{ $.EntPackage }}.Create{{ $entity }}Input
@@ -30,6 +36,61 @@ if err != nil {
 return &{{ $modelPackage }}{{ $entity }}CreatePayload{
 	{{ $entity }}: res,
 }, nil
+
+{{- else if and $.CSVGeneratedImport $isUpdate }}
+data, err := common.UnmarshalBulkData[{{ $.CSVGeneratedPackage }}.{{ $entity }}CSVUpdateInput](input)
+if err != nil {
+	logx.FromContext(ctx).Error().Err(err).Msg("failed to unmarshal bulk data")
+
+	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionUpdate, Object: "{{ $entity | toLower }}"})
+}
+
+if len(data) == 0 {
+    return nil, rout.NewMissingRequiredFieldError("input")
+}
+
+if err := resolveCSVReferencesForSchema(ctx, "{{ $entity }}", data); err != nil {
+	return nil, err
+}
+
+return r.bulkUpdateCSV{{ $entity }}(ctx, data)
+
+{{- else if $.CSVGeneratedImport }}
+data, err := common.UnmarshalBulkData[{{ $.CSVGeneratedPackage }}.{{ $entity }}CSVInput](input)
+if err != nil {
+	logx.FromContext(ctx).Error().Err(err).Msg("failed to unmarshal bulk data")
+
+	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $entity | toLower }}"})
+}
+
+if len(data) == 0 {
+    return nil, rout.NewMissingRequiredFieldError("input")
+}
+
+{{ if $isOrgOwned }}
+// set the organization in the auth context if its not done for us
+// this will choose the first input OwnerID when using a personal access token
+if err := common.SetOrganizationInAuthContextBulkRequest(ctx, data); err != nil {
+	logx.FromContext(ctx).Error().Err(err).Msg("failed to set organization in auth context")
+
+	if _, ownerErr := common.GetBulkUploadOwnerInput(data); ownerErr != nil {
+		return nil, ownerErr
+	}
+
+	return nil, rout.ErrPermissionDenied
+}
+{{- end }}
+
+if err := resolveCSVReferencesForSchema(ctx, "{{ $entity }}", data); err != nil {
+	return nil, err
+}
+
+inputs := make([]*{{ $.EntPackage }}.Create{{ $entity }}Input, 0, len(data))
+for i := range data {
+	inputs = append(inputs, &data[i].Input)
+}
+
+return r.bulkCreate{{ $entity }}(ctx, inputs)
 
 {{ else }}
 data, err := common.UnmarshalBulkData[{{ $.EntPackage }}.Create{{ $entity }}Input](input)

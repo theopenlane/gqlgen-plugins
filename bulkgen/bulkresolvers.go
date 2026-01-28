@@ -66,6 +66,13 @@ func WithCSVOutputPath(path string) Options {
 	}
 }
 
+// WithCSVGeneratedPackage sets the import path for the csvgenerated package
+func WithCSVGeneratedPackage(pkg string) Options {
+	return func(p *Plugin) {
+		p.CSVGeneratedPackage = pkg
+	}
+}
+
 // Plugin is a gqlgen plugin to generate bulk resolver functions used for mutations
 type Plugin struct {
 	// ModelPackage is the package name for the gqlgen model
@@ -76,6 +83,8 @@ type Plugin struct {
 	GraphQLImport string
 	// CSVOutputPath is the file path location that CSVs are written to
 	CSVOutputPath string
+	// CSVGeneratedPackage is the import path for the csvgenerated package
+	CSVGeneratedPackage string
 }
 
 // Name returns the name of the plugin
@@ -95,6 +104,8 @@ type BulkResolverBuild struct {
 	GraphQLImport string
 	// ModelPackage is the package name for the gqlgen model
 	ModelPackage string
+	// CSVGeneratedImport is the import path for the csvgenerated package
+	CSVGeneratedImport string
 }
 
 // Object is a struct to hold the object name for the bulk resolver
@@ -107,6 +118,8 @@ type Object struct {
 	Fields []string
 	// OperationType indicates whether this is a create or delete operation
 	OperationType string
+	// HasCSVUpdateMutation indicates if this object has a CSV bulk update mutation
+	HasCSVUpdateMutation bool
 }
 
 // GenerateCode generates the bulk resolver code
@@ -122,10 +135,23 @@ func (m *Plugin) GenerateCode(data *codegen.Data) error {
 // used by the resolvergen plugin for each bulk resolver
 func (m *Plugin) generateSingleFile(data codegen.Data) error {
 	inputData := BulkResolverBuild{
-		Objects:       []Object{},
-		ModelImport:   m.ModelPackage,
-		EntImport:     m.EntGeneratedPackage,
-		GraphQLImport: m.GraphQLImport,
+		Objects:            []Object{},
+		ModelImport:        m.ModelPackage,
+		EntImport:          m.EntGeneratedPackage,
+		GraphQLImport:      m.GraphQLImport,
+		CSVGeneratedImport: m.CSVGeneratedPackage,
+	}
+
+	// Build a set of object names that have CSV bulk mutations.
+	// Uses case-insensitive prefix matching to handle naming variations,
+	// while only matching mutations that start with expected prefixes to avoid
+	// false positives with custom resolvers containing these substrings.
+	csvBulkMutations := make(map[string]bool)
+
+	for _, f := range data.Schema.Mutation.Fields {
+		if objectName := extractObjectNameFromCSVMutation(f.Name); objectName != "" {
+			csvBulkMutations[objectName] = true
+		}
 	}
 
 	// only add the model package if the import is not empty
@@ -181,10 +207,11 @@ func (m *Plugin) generateSingleFile(data codegen.Data) error {
 			}
 
 			object := Object{
-				Name:          objectName,
-				PluralName:    pluralize.NewClient().Plural(objectName),
-				Fields:        getCreateInputFields(objectName, data),
-				OperationType: operationType,
+				Name:                 objectName,
+				PluralName:           pluralize.NewClient().Plural(objectName),
+				Fields:               getCreateInputFields(objectName, data),
+				OperationType:        operationType,
+				HasCSVUpdateMutation: csvBulkMutations[objectName],
 			}
 
 			inputData.Objects = append(inputData.Objects, object)
@@ -257,4 +284,35 @@ func generateSampleCSV(object Object, outputPath string) error {
 	log.Debug().Msgf("Sample CSV for %s created: %s", object.Name, filePath)
 
 	return nil
+}
+
+// csvMutationPrefixes defines the supported prefixes for CSV bulk mutations.
+// Each entry maps a lowercase prefix to its canonical cased version for extraction.
+var csvMutationPrefixes = []struct {
+	lowerPrefix string
+	len         int
+}{
+	{"updatebulkcsv", 13},
+	{"bulkcsvupdate", 13},
+	{"csvbulkupdate", 13},
+	{"createbulkcsv", 13},
+	{"bulkcsvcreate", 13},
+	{"csvbulkcreate", 13},
+}
+
+// extractObjectNameFromCSVMutation extracts the object name from a CSV bulk mutation name.
+// Uses case-insensitive prefix matching to handle variations like createBulkCSV, CreateBulkCsv, etc.
+// Only matches mutations that start with the expected prefix to avoid false positives with
+// custom resolvers that happen to contain these substrings.
+// Examples: updateBulkCSVControl -> Control, createBulkCSVPolicy -> Policy
+func extractObjectNameFromCSVMutation(mutationName string) string {
+	lowerName := strings.ToLower(mutationName)
+
+	for _, p := range csvMutationPrefixes {
+		if strings.HasPrefix(lowerName, p.lowerPrefix) {
+			return mutationName[p.len:]
+		}
+	}
+
+	return ""
 }
