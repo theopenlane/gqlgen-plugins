@@ -29,10 +29,16 @@ type ResolverPlugin struct {
 	entGeneratedPackage string
 	// graphqlImport is the import path for the graphql package
 	graphqlImport string
+	// csvGeneratedPackage is the import path for the csvgenerated package with CSV wrapper types
+	csvGeneratedPackage string
 	// includeCustomFields includes custom resolver fields for updates, templates
 	// are stored in `templates/updatefields/*.gotpl`, `templates/deletefields/*.gotpl`
 	// defaults to true
 	includeCustomFields bool
+	// forceRegenerateBulkResolvers when true will overwrite existing bulk resolver
+	// implementations with freshly generated code from templates. Use this for one-time
+	// migrations when bulk templates change, then disable to preserve custom logic.
+	forceRegenerateBulkResolvers bool
 
 	archivableSchemas map[string]bool
 }
@@ -96,11 +102,28 @@ func WithArchivableSchemas(schemas []string) Options {
 	}
 }
 
+// WithCSVGeneratedPackage sets the import path for the csvgenerated package
+func WithCSVGeneratedPackage(pkg string) Options {
+	return func(p *ResolverPlugin) {
+		p.csvGeneratedPackage = pkg
+	}
+}
+
+// WithForceRegenerateBulkResolvers enables forced regeneration of bulk resolver
+// implementations, overwriting any existing custom logic. Use this for one-time
+// migrations when bulk templates change, then disable to preserve customizations.
+func WithForceRegenerateBulkResolvers(enabled bool) Options {
+	return func(p *ResolverPlugin) {
+		p.forceRegenerateBulkResolvers = enabled
+	}
+}
+
 // Implement gqlgen api.ResolverImplementer
 func (r *ResolverPlugin) Implement(s string, f *codegen.Field) (val string) {
 	// if the field has a custom resolver, use it
 	// panic is not a custom resolver so attempt to implement the field
-	if s != "" && !strings.Contains(s, "panic") {
+	// regenerate bulk operations if forceRegenerateBulkResolvers is enabled
+	if s != "" && !strings.Contains(s, "panic") && !r.shouldRegenerateBulkResolver(f) {
 		return s
 	}
 
@@ -161,6 +184,7 @@ func isWorkflowResolverField(f *codegen.Field) bool {
 	}
 
 	_, ok := workflowResolverHelpers[f.GoFieldName]
+
 	return ok
 }
 
@@ -218,6 +242,26 @@ func (r *ResolverPlugin) workflowImplementer(f *codegen.Field) string {
 		EntPackage: getEntPackageFromImport(r.entGeneratedPackage),
 		IsTimeline: helperName == "workflowResolverTimeline",
 	})
+}
+
+// shouldRegenerateBulkResolver returns true if the resolver should be forcefully regenerated.
+// This is used to update existing bulk resolvers to use the latest templates with CSV wrapper types.
+// The behavior is controlled by the forceRegenerateBulkResolvers option.
+func (r *ResolverPlugin) shouldRegenerateBulkResolver(f *codegen.Field) bool {
+	if f == nil || !r.forceRegenerateBulkResolvers {
+		return false
+	}
+
+	// Only regenerate actual bulk mutation resolvers, not extended resolvers or other fields
+	// that happen to contain "Bulk" or "CSV" in their names
+	fieldName := f.GoFieldName
+
+	// Check for specific bulk mutation patterns (createBulk*, updateBulk*, deleteBulk*)
+	isBulkMutation := strings.HasPrefix(fieldName, "CreateBulk") ||
+		strings.HasPrefix(fieldName, "UpdateBulk") ||
+		strings.HasPrefix(fieldName, "DeleteBulk")
+
+	return isBulkMutation
 }
 
 // crudType returns the type of CRUD operation
