@@ -1,6 +1,7 @@
 package bulkgen
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -128,6 +129,7 @@ func TestNewWithOptions(t *testing.T) {
 			WithGraphQLImport("github.com/example/graphql"),
 			WithCSVOutputPath("/tmp/csv"),
 			WithCSVGeneratedPackage("github.com/example/csvgenerated"),
+			WithCSVFieldMappingsFile("/tmp/csv_field_mappings.json"),
 		)
 
 		assert.Equal(t, "github.com/example/model", plugin.ModelPackage)
@@ -135,6 +137,7 @@ func TestNewWithOptions(t *testing.T) {
 		assert.Equal(t, "github.com/example/graphql", plugin.GraphQLImport)
 		assert.Equal(t, "/tmp/csv", plugin.CSVOutputPath)
 		assert.Equal(t, "github.com/example/csvgenerated", plugin.CSVGeneratedPackage)
+		assert.Equal(t, "/tmp/csv_field_mappings.json", plugin.CSVFieldMappingsFile)
 	})
 
 	t.Run("no options", func(t *testing.T) {
@@ -142,10 +145,138 @@ func TestNewWithOptions(t *testing.T) {
 		assert.Empty(t, plugin.ModelPackage)
 		assert.Empty(t, plugin.EntGeneratedPackage)
 		assert.Empty(t, plugin.CSVGeneratedPackage)
+		assert.Empty(t, plugin.CSVFieldMappingsFile)
 	})
 }
 
 func TestPluginName(t *testing.T) {
 	plugin := New()
 	assert.Equal(t, "bulkgen", plugin.Name())
+}
+
+func TestWithCSVFieldMappingsFile(t *testing.T) {
+	testCases := []struct {
+		name     string
+		path     string
+		expected string
+	}{
+		{
+			name:     "standard path",
+			path:     "/path/to/csv_field_mappings.json",
+			expected: "/path/to/csv_field_mappings.json",
+		},
+		{
+			name:     "empty string",
+			path:     "",
+			expected: "",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			plugin := &Plugin{}
+			opt := WithCSVFieldMappingsFile(tc.path)
+			opt(plugin)
+			assert.Equal(t, tc.expected, plugin.CSVFieldMappingsFile)
+		})
+	}
+}
+
+func TestLoadCSVFieldMappings(t *testing.T) {
+	t.Run("returns nil for empty path", func(t *testing.T) {
+		result := loadCSVFieldMappings("")
+		assert.Nil(t, result)
+	})
+
+	t.Run("returns nil for non-existent file", func(t *testing.T) {
+		result := loadCSVFieldMappings("/non/existent/path.json")
+		assert.Nil(t, result)
+	})
+
+	t.Run("loads valid JSON file", func(t *testing.T) {
+		tempDir := t.TempDir()
+		filePath := tempDir + "/csv_field_mappings.json"
+
+		content := `{
+			"ActionPlan": [
+				{"csvColumn": "AssignedToUserEmail", "targetField": "AssignedToUserID", "isSlice": false},
+				{"csvColumn": "BlockedGroupNames", "targetField": "BlockedGroupIds", "isSlice": true}
+			],
+			"Control": [
+				{"csvColumn": "PlatformNames", "targetField": "PlatformIds", "isSlice": true}
+			]
+		}`
+
+		err := os.WriteFile(filePath, []byte(content), 0600)
+		assert.NoError(t, err)
+
+		result := loadCSVFieldMappings(filePath)
+		assert.NotNil(t, result)
+		assert.Len(t, result, 2)
+		assert.Len(t, result["ActionPlan"], 2)
+		assert.Equal(t, "AssignedToUserEmail", result["ActionPlan"][0].CSVColumn)
+		assert.Equal(t, "AssignedToUserID", result["ActionPlan"][0].TargetField)
+		assert.False(t, result["ActionPlan"][0].IsSlice)
+		assert.True(t, result["ActionPlan"][1].IsSlice)
+	})
+
+	t.Run("returns nil for invalid JSON", func(t *testing.T) {
+		tempDir := t.TempDir()
+		filePath := tempDir + "/invalid.json"
+
+		err := os.WriteFile(filePath, []byte("not valid json"), 0600)
+		assert.NoError(t, err)
+
+		result := loadCSVFieldMappings(filePath)
+		assert.Nil(t, result)
+	})
+}
+
+func TestGenerateSampleCSVWithCustomColumns(t *testing.T) {
+	tempDir := t.TempDir()
+
+	object := Object{
+		Name:          "ActionPlan",
+		Fields:        []string{"Name", "Description", "Status"},
+		OperationType: "create",
+		CSVFieldMappings: []CSVFieldMapping{
+			{CSVColumn: "AssignedToUserEmail", TargetField: "AssignedToUserID", IsSlice: false},
+			{CSVColumn: "BlockedGroupNames", TargetField: "BlockedGroupIds", IsSlice: true},
+		},
+	}
+
+	err := generateSampleCSV(object, tempDir)
+	assert.NoError(t, err)
+
+	content, err := os.ReadFile(tempDir + "/sample_actionplan.csv")
+	assert.NoError(t, err)
+
+	contentStr := string(content)
+
+	assert.Contains(t, contentStr, "Name,Description,Status,AssignedToUserEmail,BlockedGroupNames")
+	assert.Contains(t, contentStr, "example_name,example_description,example_status")
+	assert.Contains(t, contentStr, "example_assignedtouseremail")
+	assert.Contains(t, contentStr, "example_blockedgroupnames1,example_blockedgroupnames2")
+}
+
+func TestGenerateSampleCSVWithoutCustomColumns(t *testing.T) {
+	tempDir := t.TempDir()
+
+	object := Object{
+		Name:             "Simple",
+		Fields:           []string{"Name", "Value"},
+		OperationType:    "create",
+		CSVFieldMappings: nil,
+	}
+
+	err := generateSampleCSV(object, tempDir)
+	assert.NoError(t, err)
+
+	content, err := os.ReadFile(tempDir + "/sample_simple.csv")
+	assert.NoError(t, err)
+
+	contentStr := string(content)
+
+	assert.Contains(t, contentStr, "Name,Value")
+	assert.Contains(t, contentStr, "example_name,example_value")
 }
