@@ -127,6 +127,8 @@ type Object struct {
 	PluralName string
 	// Fields of the object
 	Fields []string
+	// AppendFields is the list of fields that can be appended in the update mutation
+	AppendFields []string
 	// OperationType indicates whether this is a create or delete operation
 	OperationType string
 	// HasCSVUpdateMutation indicates if this object has a CSV bulk update mutation
@@ -267,6 +269,7 @@ func (m *Plugin) generateSingleFile(data codegen.Data) error {
 				Name:                 objectName,
 				PluralName:           pluralize.NewClient().Plural(objectName),
 				Fields:               getCreateInputFields(objectName, data),
+				AppendFields:         getUpdateAppendFields(objectName, data),
 				OperationType:        operationType,
 				HasCSVUpdateMutation: csvBulkMutations[objectName],
 				CSVFieldMappings:     csvFieldMappings[objectName],
@@ -307,6 +310,20 @@ func getCreateInputFields(objectName string, data codegen.Data) (inputFields []s
 	}
 
 	return inputFields
+}
+
+// getUpdateAppendFields returns the list of fields that are appendable in the bulk update mutation
+func getUpdateAppendFields(objectName string, data codegen.Data) (appendFields []string) {
+	inputTypeName := "Update" + objectName + "Input"
+	if inputType, ok := data.Schema.Types[inputTypeName]; ok {
+		for _, f := range inputType.Fields {
+			if strings.Contains(f.Name, "append") {
+				appendFields = append(appendFields, templates.ToGo(f.Name))
+			}
+		}
+	}
+
+	return appendFields
 }
 
 // generateSampleCSV generates a sample CSV file for the given object.
