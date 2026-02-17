@@ -141,17 +141,20 @@ func (r *mutationResolver) bulkDelete{{ $object.Name }} (ctx context.Context, id
 	funcs := make([]func(), 0, len(ids))
 	for _, id := range ids {
 		funcs = append(funcs, func() {
-      // delete each {{ $object.Name | toLower }} individually to ensure proper cleanup
-			if err := r.db.{{ $object.Name }}.DeleteOneID(id).Exec(ctx); err != nil {
-				logx.FromContext(ctx).Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to delete {{ $object.Name | toLower }} in bulk operation")
+			// use r.db in context so interceptors use the connection pool instead of the shared transaction
+			poolCtx := generated.NewContext(ctx, r.db)
+
+			// delete each {{ $object.Name | toLower }} individually to ensure proper cleanup
+			if err := r.db.{{ $object.Name }}.DeleteOneID(id).Exec(poolCtx); err != nil {
+				logx.FromContext(poolCtx).Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to delete {{ $object.Name | toLower }} in bulk operation")
 				mu.Lock()
 				errors = append(errors, err)
 				mu.Unlock()
 				return
 			}
 
-			if err := generated.{{ $object.Name }}EdgeCleanup(ctx, id); err != nil {
-				logx.FromContext(ctx).Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to cleanup {{ $object.Name | toLower }} edges in bulk operation")
+			if err := generated.{{ $object.Name }}EdgeCleanup(poolCtx, id); err != nil {
+				logx.FromContext(poolCtx).Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to cleanup {{ $object.Name | toLower }} edges in bulk operation")
 				mu.Lock()
 				errors = append(errors, err)
 				mu.Unlock()
