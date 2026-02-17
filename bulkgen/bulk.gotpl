@@ -68,7 +68,7 @@ func (r *mutationResolver) bulkUpdate{{ $object.Name }} (ctx context.Context, id
 		}
 
 		// setup update request
-		updatedEntity, err := existing.Update().SetInput(input).Save(ctx)
+		updatedEntity, err := existing.Update().SetInput(input){{- range $appendField := $object.AppendFields }}.{{ $appendField }}(input.{{ $appendField }}){{- end }}.Save(ctx)
 		if err != nil {
 			logx.FromContext(ctx).Error().Err(err).Str("{{ $object.Name | toLower }}_id", id).Msg("failed to update {{ $object.Name | toLower }} in bulk operation")
 			continue
@@ -110,7 +110,7 @@ func (r *mutationResolver) bulkUpdateCSV{{ $object.Name }} (ctx context.Context,
 		}
 
 		// setup update request with this row's input values
-		updatedEntity, err := existing.Update().SetInput(input.Input).Save(ctx)
+		updatedEntity, err := existing.Update().SetInput(input.Input){{- range $appendField := $object.AppendFields }}.{{ $appendField }}(input.Input.{{ $appendField }}){{- end }}.Save(ctx)
 		if err != nil {
 			logx.FromContext(ctx).Error().Err(err).Str("{{ $object.Name | toLower }}_id", input.ID).Msg("failed to update {{ $object.Name | toLower }} in CSV bulk operation")
 			return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionUpdate, Object: "{{ $object.Name | toLower }}"})
