@@ -267,7 +267,7 @@ func (m *Plugin) generateSingleFile(data codegen.Data) error {
 
 			object := Object{
 				Name:                 objectName,
-				PluralName:           pluralize.NewClient().Plural(objectName),
+				PluralName:           pluralFieldName(objectName),
 				Fields:               getCreateInputFields(objectName, data),
 				AppendFields:         getUpdateAppendFields(objectName, data),
 				OperationType:        operationType,
@@ -407,4 +407,21 @@ func extractObjectNameFromCSVMutation(mutationName string) string {
 	}
 
 	return ""
+}
+
+// pluralFieldName makes go-pluralize and gqlgen return same values for certain edgecases
+//
+// go-pluralize keeps character casing, so TrustCenterFAQ would be "TrustCenterFAQS"
+// gqlgen generates it as "TrustCenterFAQs".
+//
+// this normalizes it to match
+func pluralFieldName(name string) string {
+	snakeCase := strcase.SnakeCase(name)
+	pluralizedValue := pluralize.NewClient().Plural(snakeCase)
+
+	if strings.HasPrefix(pluralizedValue, snakeCase) {
+		return name + pluralizedValue[len(snakeCase):]
+	}
+
+	return pluralize.NewClient().Plural(name)
 }
