@@ -259,6 +259,62 @@ func TestGenerateSampleCSVWithCustomColumns(t *testing.T) {
 	assert.Contains(t, contentStr, "example_blockedgroupnames1,example_blockedgroupnames2")
 }
 
+func TestPluralFieldName(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "faq",
+			input:    "TrustCenterFAQ",
+			expected: "TrustCenterFAQs",
+		},
+		{
+			name:     "trustcenter subprocessor",
+			input:    "TrustCenterSubprocessor",
+			expected: "TrustCenterSubprocessors",
+		},
+		{
+			name:     "policy",
+			input:    "InternalPolicy",
+			expected: "InternalPolicies",
+		},
+		{
+			name:     "control",
+			input:    "Control",
+			expected: "Controls",
+		},
+		{
+			name:     "ActionPlanStatus",
+			input:    "ActionPlanStatus",
+			expected: "ActionPlanStatuses",
+		},
+		{
+			name:     "user",
+			input:    "User",
+			expected: "Users",
+		},
+		{
+			name:     "acronym in middle",
+			input:    "APIToken",
+			expected: "APITokens",
+		},
+		{
+			name:     "Entity",
+			input:    "Entity",
+			expected: "Entities",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := pluralFieldName(tc.input)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
 func TestGenerateSampleCSVWithoutCustomColumns(t *testing.T) {
 	tempDir := t.TempDir()
 
