@@ -9,7 +9,7 @@
 {{- end }}
 
 {{- if $.RuleImport }}
-{{ reserveImport $.RuleImport }}
+{{ reserveImport "github.com/theopenlane/iam/auth" }}
 {{- end }}
 
 {{- if $.ModelImport }}
@@ -30,8 +30,7 @@ func (r *queryResolver) Search(ctx context.Context, query string, after *entgql.
 func (r *queryResolver) {{ $.Name }}Search(ctx context.Context, query string, after *entgql.Cursor[string], first *int, before *entgql.Cursor[string], last *int) (*{{ .ModelPackage }}SearchResults, error) {
 	{{- if $.RuleImport }}
 	// ensure the user is a system admin
-	isAdmin, err := rule.CheckIsSystemAdminWithContext(ctx)
-	if err != nil || !isAdmin {
+	if !auth.IsSystemAdminFromContext(ctx) {
 		return nil, generated.ErrPermissionDenied
 	}
 	{{- end }}
@@ -103,8 +102,7 @@ func (r *queryResolver) {{ $object.Name }}Search(ctx context.Context, query stri
 func (r *queryResolver) Admin{{ $object.Name }}Search(ctx context.Context, query string, after *entgql.Cursor[string], first *int, before *entgql.Cursor[string], last *int) (*generated.{{ $object.Name }}Connection, error) {
 		{{- if $.RuleImport }}
 		// ensure the user is a system admin
-		isAdmin, err := rule.CheckIsSystemAdminWithContext(ctx)
-		if err != nil || !isAdmin {
+		if !auth.IsSystemAdminFromContext(ctx) {
 			return nil, generated.ErrPermissionDenied
 		}
 		{{- end }}
