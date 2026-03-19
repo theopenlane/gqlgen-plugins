@@ -2,6 +2,7 @@
 {{ reserveImport "sync" }}
 {{ reserveImport "github.com/theopenlane/core/pkg/logx" }}
 {{ reserveImport "github.com/theopenlane/utils/rout" }}
+{{ reserveImport "github.com/theopenlane/iam/fgax" }}
 
 {{- if $.EntImport }}
 {{ reserveImport $.EntImport }}
@@ -47,6 +48,14 @@ func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, in
 func (r *mutationResolver) bulkUpdate{{ $object.Name }} (ctx context.Context, ids []string, input generated.Update{{ $object.Name }}Input) (*{{ $root.ModelPackage }}{{ $object.Name }}BulkUpdatePayload, error) {
 	if len(ids) == 0 {
 		return nil, rout.NewMissingRequiredFieldError("ids")
+	}
+
+	ids = r.filterAuthorizedIDs(ctx, ids, "{{ $object.Name | toSnakeCase }}", fgax.CanEdit)
+	if len(ids) == 0 {
+		return &{{ $root.ModelPackage }}{{ $object.Name }}BulkUpdatePayload{
+			{{ $object.PluralName }}: []*generated.{{ $object.Name }}{},
+			UpdatedIDs: []string{},
+		}, nil
 	}
 
 	c := withTransactionalMutation(ctx)
@@ -131,6 +140,13 @@ func (r *mutationResolver) bulkUpdateCSV{{ $object.Name }} (ctx context.Context,
 func (r *mutationResolver) bulkDelete{{ $object.Name }} (ctx context.Context, ids []string) (*{{ $root.ModelPackage }}{{ $object.Name }}BulkDeletePayload, error) {
 	if len(ids) == 0 {
 		return nil, rout.NewMissingRequiredFieldError("ids")
+	}
+
+	ids = r.filterAuthorizedIDs(ctx, ids, "{{ $object.Name | toSnakeCase }}", fgax.CanDelete)
+	if len(ids) == 0 {
+		return &{{ $root.ModelPackage }}{{ $object.Name }}BulkDeletePayload{
+			DeletedIDs: []string{},
+		}, nil
 	}
 
 	deletedIDs := make([]string, 0, len(ids))
