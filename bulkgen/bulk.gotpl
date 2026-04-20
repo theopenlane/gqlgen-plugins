@@ -1,5 +1,6 @@
 {{ reserveImport "context"  }}
 {{ reserveImport "sync" }}
+{{ reserveImport "github.com/theopenlane/core/internal/graphapi/gqlerrors" }}
 {{ reserveImport "github.com/theopenlane/core/pkg/logx" }}
 {{ reserveImport "github.com/theopenlane/utils/rout" }}
 {{ reserveImport "github.com/theopenlane/iam/fgax" }}
@@ -142,10 +143,15 @@ func (r *mutationResolver) bulkDelete{{ $object.Name }} (ctx context.Context, id
 		return nil, rout.NewMissingRequiredFieldError("ids")
 	}
 
+	originalIDs := append([]string(nil), ids...)
 	ids = r.filterAuthorizedIDs(ctx, ids, "{{ $object.Name | toSnakeCase }}", fgax.CanDelete)
 	if len(ids) == 0 {
+		err := gqlerrors.BulkActionIncomplete
+
 		return &{{ $root.ModelPackage }}{{ $object.Name }}BulkDeletePayload{
-			DeletedIDs: []string{},
+			DeletedIDs:    []string{},
+			NotDeletedIDs: originalIDs,
+			Error:         &err,
 		}, nil
 	}
 
@@ -191,8 +197,28 @@ func (r *mutationResolver) bulkDelete{{ $object.Name }} (ctx context.Context, id
 		logx.FromContext(ctx).Error().Int("deleted_items", len(deletedIDs)).Int("errors", len(errors)).Msg("some {{ $object.Name | toLower }} deletions failed")
 	}
 
+	deleted := make(map[string]struct{}, len(deletedIDs))
+	for _, id := range deletedIDs {
+		deleted[id] = struct{}{}
+	}
+
+	notDeletedIDs := make([]string, 0, len(originalIDs))
+	for _, id := range originalIDs {
+		if _, ok := deleted[id]; !ok {
+			notDeletedIDs = append(notDeletedIDs, id)
+		}
+	}
+
+	var err *string
+	if len(notDeletedIDs) > 0 {
+		bulkActionIncomplete := gqlerrors.BulkActionIncomplete
+		err = &bulkActionIncomplete
+	}
+
 	return &{{ $root.ModelPackage }}{{ $object.Name }}BulkDeletePayload{
-		DeletedIDs: deletedIDs,
+		DeletedIDs:    deletedIDs,
+		NotDeletedIDs: notDeletedIDs,
+		Error:         err,
 	}, nil
 }
 {{- end }}
