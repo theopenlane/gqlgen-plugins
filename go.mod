@@ -4,7 +4,7 @@ go 1.25.7
 
 require (
 	entgo.io/contrib v0.7.0
-	entgo.io/ent v0.14.5
+	entgo.io/ent v0.14.6
 	github.com/99designs/gqlgen v0.17.86
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/rs/zerolog v1.34.0
