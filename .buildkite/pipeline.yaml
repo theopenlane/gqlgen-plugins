@@ -39,7 +39,7 @@ steps:
               download: "coverage.out"
               step: "go_test"
           - docker#v5.14.0:
-              image: "sonarsource/sonar-scanner-cli:11"
+              image: "sonarsource/sonar-scanner-cli:12.1"
               environment:
                 - "SONAR_TOKEN"
                 - "SONAR_HOST_URL=$SONAR_HOST"
@@ -56,7 +56,7 @@ steps:
               download: coverage.out
               step: "go_test"
           - docker#v5.14.0:
-              image: "sonarsource/sonar-scanner-cli:11"
+              image: "sonarsource/sonar-scanner-cli:12.1"
               environment:
                 - "SONAR_TOKEN"
                 - "SONAR_HOST_URL=$SONAR_HOST"
