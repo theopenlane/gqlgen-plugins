@@ -19,7 +19,6 @@ const workflowResolverHelperFile = "workflow_resolvers_gen.go"
 var workflowResolverHelpers = map[string]string{
 	"HasPendingWorkflow":      "workflowResolverHasPending",
 	"HasWorkflowHistory":      "workflowResolverHasHistory",
-	"ActiveWorkflowInstance":  "workflowResolverActiveInstance",
 	"ActiveWorkflowInstances": "workflowResolverActiveInstances",
 	"WorkflowTimeline":        "workflowResolverTimeline",
 }
@@ -100,12 +99,13 @@ func UpdateWorkflowResolvers(graphResolverDir string) error {
 	}
 
 	enumsImportPath := filepath.ToSlash(filepath.Join(moduleRoot, "common/enums"))
+	workflowsImportPath := filepath.ToSlash(filepath.Join(moduleRoot, "internal/workflows"))
 
 	if packageName == "" {
 		packageName = "graphapi"
 	}
 
-	helperContent, err := renderWorkflowResolverHelpers(packageName, generatedImportPath, graphCommonImportPath, enumsImportPath)
+	helperContent, err := renderWorkflowResolverHelpers(packageName, generatedImportPath, graphCommonImportPath, enumsImportPath, workflowsImportPath)
 	if err != nil {
 		return err
 	}
@@ -224,7 +224,7 @@ func modulePathFromGoMod(data []byte) string {
 
 // renderWorkflowResolverHelpers generates the Go source code for the workflow resolver helper file.
 // This file contains shared implementations for workflow resolvers that are called by the individual entity resolvers.
-func renderWorkflowResolverHelpers(packageName, generatedImportPath, graphCommonImportPath, enumsImportPath string) ([]byte, error) {
+func renderWorkflowResolverHelpers(packageName, generatedImportPath, graphCommonImportPath, enumsImportPath, workflowsImportPath string) ([]byte, error) {
 	workflowEventImportPath := generatedImportPath + "/workflowevent"
 	workflowInstanceImportPath := generatedImportPath + "/workflowinstance"
 	workflowObjectRefImportPath := generatedImportPath + "/workflowobjectref"
@@ -245,6 +245,7 @@ import (
 	"%s"
 	"%s"
 	"%s"
+	"%s"
 )
 
 // workflowResolverHasPending checks if the object has any pending workflow proposals (draft or submitted).
@@ -258,8 +259,10 @@ func workflowResolverHasPending(ctx context.Context, objectType string, objectID
 		return false, nil
 	}
 
-	query := withTransactionalMutation(ctx).WorkflowObjectRef.Query()
-	query = generated.ApplyWorkflowObjectRefObjectPredicate(query, *wfType, objectID)
+	query, err := workflows.FilterWorkflowObjectRefs(withTransactionalMutation(ctx).WorkflowObjectRef.Query(), *wfType, objectID)
+	if err != nil {
+		return false, err
+	}
 
 	exists, err := query.Where(
 		workflowobjectref.HasWorkflowProposalsWith(
@@ -287,8 +290,10 @@ func workflowResolverHasHistory(ctx context.Context, objectType string, objectID
 		return false, nil
 	}
 
-	query := withTransactionalMutation(ctx).WorkflowInstance.Query()
-	query = generated.ApplyWorkflowInstanceObjectPredicate(query, *wfType, objectID)
+	query, err := workflows.FilterWorkflowInstances(withTransactionalMutation(ctx).WorkflowInstance.Query(), *wfType, objectID)
+	if err != nil {
+		return false, err
+	}
 
 	exists, err := query.Where(
 		workflowinstance.StateIn(
@@ -326,21 +331,6 @@ func workflowResolverActiveInstances(ctx context.Context, objectType string, obj
 	}
 
 	return res, nil
-}
-
-// workflowResolverActiveInstance returns the most recent active workflow instance for the object.
-// If none exist, it returns nil without error.
-func workflowResolverActiveInstance(ctx context.Context, objectType string, objectID string) (*generated.WorkflowInstance, error) {
-	instances, err := workflowResolverActiveInstances(ctx, objectType, objectID)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(instances) == 0 {
-		return nil, nil
-	}
-
-	return instances[0], nil
 }
 
 // workflowResolverTimeline returns the workflow event timeline for an object across all its workflow instances.
@@ -409,8 +399,10 @@ func workflowResolverTimeline(ctx context.Context, objectType string, objectID s
 
 // workflowResolverInstanceIDs returns all workflow instance IDs for the given object.
 func workflowResolverInstanceIDs(ctx context.Context, wfType enums.WorkflowObjectType, objectID string) ([]string, error) {
-	query := withTransactionalMutation(ctx).WorkflowInstance.Query()
-	query = generated.ApplyWorkflowInstanceObjectPredicate(query, wfType, objectID)
+	query, err := workflows.FilterWorkflowInstances(withTransactionalMutation(ctx).WorkflowInstance.Query(), wfType, objectID)
+	if err != nil {
+		return nil, err
+	}
 
 	return query.IDs(ctx)
 }
@@ -431,7 +423,10 @@ func workflowResolverInstanceQuery(ctx context.Context, objectType string, objec
 		return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionGet, Object: "workflowinstance"})
 	}
 
-	query = generated.ApplyWorkflowInstanceObjectPredicate(query, *wfType, objectID)
+	query, err = workflows.FilterWorkflowInstances(query, *wfType, objectID)
+	if err != nil {
+		return nil, err
+	}
 
 	return query, nil
 }
@@ -455,7 +450,7 @@ func workflowTimelineEventTypes(includeEmitFailures bool) []enums.WorkflowEventT
 
 	return eventTypes
 }
-`, packageName, enumsImportPath, generatedImportPath, graphCommonImportPath, workflowEventImportPath, workflowInstanceImportPath, workflowObjectRefImportPath, workflowProposalImportPath)
+`, packageName, enumsImportPath, generatedImportPath, graphCommonImportPath, workflowEventImportPath, workflowInstanceImportPath, workflowObjectRefImportPath, workflowProposalImportPath, workflowsImportPath)
 
 	formatted, err := format.Source([]byte(content))
 	if err != nil {
