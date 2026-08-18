@@ -51,11 +51,16 @@ func (r *mutationResolver) bulkUpdate{{ $object.Name }} (ctx context.Context, id
 		return nil, rout.NewMissingRequiredFieldError("ids")
 	}
 
+	originalIDs := append([]string(nil), ids...)
 	ids = r.filterAuthorizedIDs(ctx, ids, "{{ $object.Name | toSnakeCase }}", fgax.CanEdit)
 	if len(ids) == 0 {
+		err := gqlerrors.BulkActionIncomplete
+
 		return &{{ $root.ModelPackage }}{{ $object.Name }}BulkUpdatePayload{
 			{{ $object.PluralName }}: []*generated.{{ $object.Name }}{},
-			UpdatedIDs: []string{},
+			UpdatedIDs:    []string{},
+			NotUpdatedIDs: originalIDs,
+			Error:         &err,
 		}, nil
 	}
 
@@ -88,9 +93,29 @@ func (r *mutationResolver) bulkUpdate{{ $object.Name }} (ctx context.Context, id
 		updatedIDs = append(updatedIDs, id)
 	}
 
+	updated := make(map[string]struct{}, len(updatedIDs))
+	for _, id := range updatedIDs {
+		updated[id] = struct{}{}
+	}
+
+	notUpdatedIDs := make([]string, 0, len(originalIDs))
+	for _, id := range originalIDs {
+		if _, ok := updated[id]; !ok {
+			notUpdatedIDs = append(notUpdatedIDs, id)
+		}
+	}
+
+	var err *string
+	if len(notUpdatedIDs) > 0 {
+		bulkActionIncomplete := gqlerrors.BulkActionIncomplete
+		err = &bulkActionIncomplete
+	}
+
 	return &{{ $root.ModelPackage }}{{ $object.Name }}BulkUpdatePayload{
 		{{ $object.PluralName }}: results,
-		UpdatedIDs: updatedIDs,
+		UpdatedIDs:    updatedIDs,
+		NotUpdatedIDs: notUpdatedIDs,
+		Error:         err,
 	}, nil
 }
 {{- if and $object.HasCSVUpdateMutation $root.CSVGeneratedImport }}
