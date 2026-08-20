@@ -149,6 +149,8 @@ type SearchResolverBuild struct {
 	GraphQLImport string
 	// IDFields are the fields that are IDs and should be searched with equals instead of like
 	IDFields []string
+	// IncludeAdminSearch indicates whether the admin search helpers should be generated
+	IncludeAdminSearch bool
 }
 
 // Object is a struct to hold the object name for the bulk resolver
@@ -190,6 +192,10 @@ func (r SearchPlugin) GenerateCode(data *codegen.Data) error {
 	if r.idFields != nil {
 		inputData.IDFields = r.idFields
 	}
+
+	// the admin search helpers are only referenced by the admin resolver, so skip
+	// generating them entirely when the admin resolver is disabled
+	inputData.IncludeAdminSearch = r.includeAdminSearch
 
 	// generate the search helper
 	if err := genSearchHelper(data, inputData); err != nil {

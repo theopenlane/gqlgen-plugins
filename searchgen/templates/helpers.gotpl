@@ -1,5 +1,4 @@
 {{reserveImport "context" }}
-{{reserveImport "time" }}
 
 {{reserveImport $.EntImport "generated"}}
 {{reserveImport "entgo.io/ent/dialect/sql"}}
@@ -16,16 +15,6 @@ import (
 	"{{ $.EntImport }}/{{ $object.Name | toLower }}"
 {{- end }}
 )
-
-var (
-	maxSearchTime = time.Duration(30 * time.Second)
-)
-
-// searchResult is a generic struct to hold the result of a search operation
-type searchResult[T any] struct {
-	result T
-	err    error
-}
 
 {{/* For each schema */}}
 {{- range $object := $.Objects }}
@@ -64,7 +53,8 @@ func search{{ $object.Name | toPlural }}(ctx context.Context, query string, afte
 	return request.Paginate(ctx, after, first, before, last)
 }
 
-// search{{ $object.Name  }} searches for {{ $object.Name  }} based on the query string looking for matches
+{{- if $.IncludeAdminSearch }}
+// adminSearch{{ $object.Name  }} searches for {{ $object.Name  }} based on the query string looking for matches, including admin only fields
 func adminSearch{{ $object.Name | toPlural }}(ctx context.Context, query string, after *entgql.Cursor[string], first *int, before *entgql.Cursor[string], last *int) (*generated.{{ $object.Name }}Connection, error) {
 	request  := withTransactionalMutation(ctx).{{ $object.Name  }}.Query().
 		Where(
@@ -98,4 +88,5 @@ func adminSearch{{ $object.Name | toPlural }}(ctx context.Context, query string,
 
 	return request.Paginate(ctx, after, first, before, last)
 }
+{{- end }}
 {{ end }}
