@@ -15,6 +15,9 @@ import (
 // workflowResolverHelperFile is the filename for the generated workflow resolver helper functions
 const workflowResolverHelperFile = "workflow_resolvers_gen.go"
 
+// commonRoot is the module root for the common go module
+const commonRoot = "github.com/theopenlane/core/common"
+
 // workflowResolverHelpers maps gqlgen-generated resolver method names to their helper function names.
 var workflowResolverHelpers = map[string]string{
 	"HasPendingWorkflow":      "workflowResolverHasPending",
@@ -98,7 +101,7 @@ func UpdateWorkflowResolvers(graphResolverDir string) error {
 		graphCommonImportPath = filepath.ToSlash(filepath.Join(moduleRoot, "internal/graphapi/common"))
 	}
 
-	enumsImportPath := filepath.ToSlash(filepath.Join(moduleRoot, "common/enums"))
+	enumsImportPath := filepath.ToSlash(filepath.Join(commonRoot, "/enums"))
 	workflowsImportPath := filepath.ToSlash(filepath.Join(moduleRoot, "internal/workflows"))
 
 	if packageName == "" {

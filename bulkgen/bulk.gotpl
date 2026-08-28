@@ -1,7 +1,7 @@
 {{ reserveImport "context"  }}
 {{ reserveImport "sync" }}
-{{ reserveImport "github.com/theopenlane/core/internal/graphapi/gqlerrors" }}
-{{ reserveImport "github.com/theopenlane/core/pkg/logx" }}
+{{ reserveImport "github.com/theopenlane/core/v2/internal/graphapi/gqlerrors" }}
+{{ reserveImport "github.com/theopenlane/core/v2/pkg/logx" }}
 {{ reserveImport "github.com/theopenlane/utils/rout" }}
 {{ reserveImport "github.com/theopenlane/iam/fgax" }}
 

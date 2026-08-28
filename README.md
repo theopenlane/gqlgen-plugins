@@ -32,11 +32,11 @@ in the schema or the schema name
 
 Creates search resolvers to search on fields within the ent schema. You must
 pass in the package import name of the `generated` ent code, e.g.
-`github.com/theopenlane/core/internal/ent/generated`. If the package is not
+`github.com/theopenlane/core/v2/internal/ent/generated`. If the package is not
 named `generated` it is added as an alias.
 
 ```go
-api.AddPlugin(searchgen.New("github.com/theopenlane/core/internal/ent/generated")), // add the search plugin
+api.AddPlugin(searchgen.New("github.com/theopenlane/core/v2/internal/ent/generated")), // add the search plugin
 ```
 
 ## Usage
@@ -55,7 +55,7 @@ func main() {
 	if err := api.Generate(cfg,
 		api.ReplacePlugin(resolvergen.New()), // replace the resolvergen plugin
 		api.AddPlugin(bulkgen.New()),         // add the bulkgen plugin
-		api.AddPlugin(searchgen.New("github.com/theopenlane/core/internal/ent/generated")), // add the search plugin
+		api.AddPlugin(searchgen.New("github.com/theopenlane/core/v2/internal/ent/generated")), // add the search plugin
 	); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(3)

@@ -5,7 +5,7 @@
 {{ reserveImport $.GraphQLImport }}
 {{- end }}
 
-{{ if and (hasArgument "where" .Field.FieldDefinition.Arguments) (hasStatusField $entity) }}{{ reserveImport "github.com/theopenlane/core/pkg/enums" }}{{ end }}
+{{ if and (hasArgument "where" .Field.FieldDefinition.Arguments) (hasStatusField $entity) }}{{ reserveImport "github.com/theopenlane/core/v2/pkg/enums" }}{{ end }}
 {{ $hasAfter := hasArgument "after" .Field.FieldDefinition.Arguments }}
 {{ $hasFirst := hasArgument "first" .Field.FieldDefinition.Arguments }}
 {{ $hasBefore := hasArgument "before" .Field.FieldDefinition.Arguments }}

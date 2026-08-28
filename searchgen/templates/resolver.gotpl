@@ -1,6 +1,6 @@
 {{- reserveImport "context" }}
 
-{{- reserveImport "github.com/theopenlane/core/pkg/logx" }}
+{{- reserveImport "github.com/theopenlane/core/v2/pkg/logx" }}
 {{- reserveImport "entgo.io/contrib/entgql" }}
 {{- reserveImport "github.com/theopenlane/gqlgen-plugins/graphutils" }}
 
