@@ -95,7 +95,7 @@ func (r *controlResolver) WorkflowTimeline(ctx context.Context, obj *generated.C
 		t.Fatalf("expected helper file to include generated import")
 	}
 
-	if !strings.Contains(helperStr, "example.com/test/common/enums") {
+	if !strings.Contains(helperStr, "github.com/theopenlane/core/common/enums") {
 		t.Fatalf("expected helper file to include enums import")
 	}
 

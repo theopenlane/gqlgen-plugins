@@ -1,4 +1,4 @@
-{{ reserveImport "github.com/theopenlane/core/pkg/logx" }}
+{{ reserveImport "github.com/theopenlane/core/v2/pkg/logx" }}
 {{ reserveImport "github.com/theopenlane/utils/rout" }}
 
 {{- if $.GraphQLImport }}

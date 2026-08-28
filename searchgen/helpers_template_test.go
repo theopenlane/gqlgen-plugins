@@ -35,7 +35,7 @@ func renderHelpers(t *testing.T, data SearchResolverBuild) string {
 
 func TestHelperTemplateAdminSearch(t *testing.T) {
 	data := SearchResolverBuild{
-		EntImport: "github.com/theopenlane/core/internal/ent/generated",
+		EntImport: "github.com/theopenlane/core/v2/internal/ent/generated",
 		IDFields:  defaultIDFields,
 		Objects: []Object{
 			{
