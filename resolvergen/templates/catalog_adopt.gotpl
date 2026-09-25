@@ -1,0 +1,49 @@
+{{ reserveImport "errors" }}
+{{ reserveImport "github.com/theopenlane/utils/rout" }}
+{{ reserveImport "github.com/theopenlane/core/v2/pkg/logx" }}
+{{ reserveImport "github.com/theopenlane/iam/auth" }}
+{{ reserveImport $.EntityOpsImport }}
+{{ reserveImport $.JSONXImport }}
+
+{{- if $.GraphQLImport }}
+{{ reserveImport $.GraphQLImport }}
+{{- end }}
+
+{{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
+{{ $modelPackage := .ModelPackage | modelPackage -}}
+
+// set the organization in the auth context if its not done for us
+ctx, err := common.SetOrganizationInAuthContext(ctx, nil)
+if err != nil {
+	logx.FromContext(ctx).Error().Err(err).Msg("failed to set organization in auth context")
+
+	return nil, rout.NewMissingRequiredFieldError("owner_id")
+}
+
+orgID, err := auth.GetOrganizationIDFromContext(ctx)
+if err != nil {
+	return nil, rout.ErrPermissionDenied
+}
+
+overlay, err := {{ $.JSONXPackage }}.ToRawMessage(input)
+if err != nil {
+	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $entity | toLower }}"})
+}
+
+id, _, err := {{ $.EntityOpsPackage }}.Schema{{ $entity }}.Adopt(ctx, withTransactionalMutation(ctx), catalogID, orgID, overlay)
+
+switch {
+case errors.Is(err, {{ $.EntityOpsPackage }}.ErrCatalogRowNotSystemOwned), errors.Is(err, {{ $.EntityOpsPackage }}.ErrCatalogRowNotVisible):
+	return nil, common.NewNotFoundError("{{ $entity | toLower }}")
+case err != nil:
+	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $entity | toLower }}"})
+}
+
+res, err := withTransactionalMutation(ctx).{{ $entity }}.Get(ctx, id)
+if err != nil {
+	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionGet, Object: "{{ $entity | toLower }}"})
+}
+
+return &{{ $modelPackage }}{{ $entity }}CreatePayload{
+	{{ $entity }}: res,
+}, nil

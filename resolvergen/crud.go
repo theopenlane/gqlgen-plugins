@@ -39,6 +39,20 @@ type crudResolver struct {
 	IncludeCustomUpdateFields bool
 	// ArchivableSchemas is a map of entity names that support archived status filtering
 	ArchivableSchemas map[string]bool
+	// CatalogSchemas is a map of entity names whose system-owned rows are listed only through the catalog query
+	CatalogSchemas map[string]bool
+	// RuleImport is the import path for the privacy rule package
+	RuleImport string
+	// RulePackage is the package name for the privacy rule package
+	RulePackage string
+	// EntityOpsImport is the import path for the entityops package
+	EntityOpsImport string
+	// EntityOpsPackage is the package name for the entityops package
+	EntityOpsPackage string
+	// JSONXImport is the import path for the jsonx package
+	JSONXImport string
+	// JSONXPackage is the package name for the jsonx package
+	JSONXPackage string
 }
 
 // renderTemplate renders the template with the given name
@@ -62,6 +76,7 @@ func renderTemplate(templateName string, input *crudResolver, childTemplates []s
 		"isCommentUpdateOnObject": isCommentUpdateOnObject,
 		"contains":                strings.Contains,
 		"hasStatusField":          func(entityName string) bool { return input.ArchivableSchemas[entityName] },
+		"isCatalogSchema":         func(entityName string) bool { return input.CatalogSchemas[entityName] },
 		"getArchivedStatusValue":  getArchivedStatusEnum,
 	}).ParseFS(templates, patterns...)
 	if err != nil {
@@ -188,6 +203,34 @@ func (r *ResolverPlugin) renderList(field *codegen.Field) string {
 		EntPackage:        getEntPackageFromImport(r.entGeneratedPackage),
 		GraphQLImport:     r.graphqlImport,
 		ArchivableSchemas: r.archivableSchemas,
+		CatalogSchemas:    r.catalogSchemas,
+	}, []string{})
+}
+
+// renderCatalogList renders the catalog list template
+func (r *ResolverPlugin) renderCatalogList(field *codegen.Field) string {
+	return renderTemplate("catalog_list.gotpl", &crudResolver{
+		Field:         field,
+		EntImport:     r.entGeneratedPackage,
+		EntPackage:    getEntPackageFromImport(r.entGeneratedPackage),
+		GraphQLImport: r.graphqlImport,
+		RuleImport:    r.rulePackage,
+		RulePackage:   getEntPackageFromImport(r.rulePackage),
+	}, []string{})
+}
+
+// renderCatalogAdopt renders the catalog adopt template
+func (r *ResolverPlugin) renderCatalogAdopt(field *codegen.Field) string {
+	return renderTemplate("catalog_adopt.gotpl", &crudResolver{
+		Field:            field,
+		ModelPackage:     r.modelPackage,
+		EntImport:        r.entGeneratedPackage,
+		EntPackage:       getEntPackageFromImport(r.entGeneratedPackage),
+		GraphQLImport:    r.graphqlImport,
+		EntityOpsImport:  r.entityOpsPackage,
+		EntityOpsPackage: getEntPackageFromImport(r.entityOpsPackage),
+		JSONXImport:      r.jsonxPackage,
+		JSONXPackage:     getEntPackageFromImport(r.jsonxPackage),
 	}, []string{})
 }
 
@@ -203,6 +246,8 @@ const (
 	UploadOperation  = "Upload"
 	Connection       = "Connection"
 	Payload          = "Payload"
+	AdoptOperation   = "Adopt"
+	CatalogOperation = "Catalog"
 )
 
 // crudTypes is a list of CRUD operations that are included in the resolver name
