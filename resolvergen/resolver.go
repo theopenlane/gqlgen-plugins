@@ -7,6 +7,7 @@ import (
 	"github.com/99designs/gqlgen/codegen"
 	"github.com/99designs/gqlgen/plugin"
 	"github.com/99designs/gqlgen/plugin/resolvergen"
+	"github.com/stoewer/go-strcase"
 	"github.com/vektah/gqlparser/v2/ast"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -39,8 +40,16 @@ type ResolverPlugin struct {
 	// implementations with freshly generated code from templates. Use this for one-time
 	// migrations when bulk templates change, then disable to preserve custom logic.
 	forceRegenerateBulkResolvers bool
-
+	// archivableSchemas is a map of schema names that can have a status of archived
 	archivableSchemas map[string]bool
+	// catalogSchemas are the schemas that expose a catalog query and an adopt mutation
+	catalogSchemas map[string]bool
+	// rulePackage is the import path for the privacy rule package
+	rulePackage string
+	// entityOpsPackage is the import path for the entityops package
+	entityOpsPackage string
+	// jsonxPackage is the import path for the jsonx package
+	jsonxPackage string
 }
 
 // Name returns the name of the plugin
@@ -102,6 +111,38 @@ func WithArchivableSchemas(schemas []string) Options {
 	}
 }
 
+// WithCatalogSchemas sets schemas that expose a catalog query and an adopt mutation
+func WithCatalogSchemas(schemas []string) Options {
+	return func(p *ResolverPlugin) {
+		p.catalogSchemas = map[string]bool{}
+
+		for _, s := range schemas {
+			p.catalogSchemas[strcase.UpperCamelCase(s)] = true
+		}
+	}
+}
+
+// WithRulePackage sets the import path for the privacy rule package
+func WithRulePackage(pkg string) Options {
+	return func(p *ResolverPlugin) {
+		p.rulePackage = pkg
+	}
+}
+
+// WithEntityOpsPackage sets the import path for the entityops package
+func WithEntityOpsPackage(pkg string) Options {
+	return func(p *ResolverPlugin) {
+		p.entityOpsPackage = pkg
+	}
+}
+
+// WithJSONXPackage sets the import path for the jsonx package
+func WithJSONXPackage(pkg string) Options {
+	return func(p *ResolverPlugin) {
+		p.jsonxPackage = pkg
+	}
+}
+
 // WithCSVGeneratedPackage sets the import path for the csvgenerated package
 func WithCSVGeneratedPackage(pkg string) Options {
 	return func(p *ResolverPlugin) {
@@ -128,6 +169,10 @@ func (r *ResolverPlugin) Implement(s string, f *codegen.Field) (val string) {
 	}
 
 	switch {
+	case r.isCatalogQuery(f):
+		return r.renderCatalogList(f)
+	case r.isAdoptMutation(f):
+		return r.renderCatalogAdopt(f)
 	case isMutation(f), isInput(f):
 		return r.mutationImplementer(f)
 	case isQuery(f):
@@ -141,6 +186,10 @@ func (r *ResolverPlugin) Implement(s string, f *codegen.Field) (val string) {
 
 // GenerateCode implements api.CodeGenerator
 func (r *ResolverPlugin) GenerateCode(data *codegen.Data) error {
+	if len(r.catalogSchemas) > 0 && (r.rulePackage == "" || r.entityOpsPackage == "" || r.jsonxPackage == "") {
+		return ErrCatalogPackagesRequired
+	}
+
 	// set the model package if it is different from the resolver package
 	if data.Config.Resolver.Package != data.Config.Model.Package {
 		r.modelPackage = data.Config.Model.Package
@@ -172,6 +221,16 @@ func isQuery(f *codegen.Field) bool {
 // isQuery returns true if the field is a query
 func isInput(f *codegen.Field) bool {
 	return strings.Contains(f.Object.Name, "Input")
+}
+
+// isCatalogQuery returns true if the field is the catalog query of a catalog schema
+func (r *ResolverPlugin) isCatalogQuery(f *codegen.Field) bool {
+	return isQuery(f) && strings.HasSuffix(f.GoFieldName, CatalogOperation) && r.catalogSchemas[getEntityName(f.TypeReference.Definition.Name)]
+}
+
+// isAdoptMutation returns true if the field is the adopt mutation of a catalog schema
+func (r *ResolverPlugin) isAdoptMutation(f *codegen.Field) bool {
+	return isMutation(f) && strings.HasPrefix(f.GoFieldName, AdoptOperation) && r.catalogSchemas[getEntityName(f.TypeReference.Definition.Name)]
 }
 
 func isWorkflowResolverField(f *codegen.Field) bool {

@@ -1,11 +1,14 @@
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName -}}
 {{ reserveImport "github.com/theopenlane/gqlgen-plugins/graphutils" }}
+{{ reserveImport $.RuleImport }}
+
+{{ $import := print $.EntImport "/" $entity | toLower }}
+{{ reserveImport $import }}
 
 {{- if $.GraphQLImport }}
 {{ reserveImport $.GraphQLImport }}
 {{- end }}
 
-{{ if and (hasArgument "where" .Field.FieldDefinition.Arguments) (hasStatusField $entity) }}{{ reserveImport "github.com/theopenlane/core/v2/pkg/enums" }}{{ end }}
 {{ $hasAfter := hasArgument "after" .Field.FieldDefinition.Arguments }}
 {{ $hasFirst := hasArgument "first" .Field.FieldDefinition.Arguments }}
 {{ $hasBefore := hasArgument "before" .Field.FieldDefinition.Arguments }}
@@ -17,28 +20,6 @@
 {{ if and $hasFirst $hasLast }}
 // set page limit if nothing was set
 first, last = graphutils.SetFirstLastDefaults(first, last, r.maxResultLimit)
-{{- end }}
-
-{{ if and $hasWhere (hasStatusField $entity) }}
-// apply default status filtering to exclude archived items unless they are explicitly requested
-if where == nil {
-	where = &{{ $.EntPackage }}.{{ $entity }}WhereInput{}
-}
-if where.Status == nil && where.StatusNEQ == nil && where.StatusIn == nil && where.StatusNotIn == nil {
-	archivedStatus := {{ getArchivedStatusValue $entity }}
-	where.StatusNEQ = &archivedStatus
-}
-{{- end }}
-
-{{ if and $hasWhere (isCatalogSchema $entity) }}
-// exclude system-owned catalog rows unless they are explicitly requested; the catalog query lists them
-if where == nil {
-	where = &{{ $.EntPackage }}.{{ $entity }}WhereInput{}
-}
-if where.SystemOwned == nil && where.SystemOwnedNEQ == nil {
-	systemOwned := false
-	where.SystemOwned = &systemOwned
-}
 {{- end }}
 
 {{ if $hasOrderBy }}
@@ -58,10 +39,21 @@ if orderBy == nil {
 }
 {{- end }}
 
-query, err :=  withTransactionalMutation(ctx).{{ $entity }}.Query().CollectFields(ctx)
+ctx = {{ $.RulePackage }}.WithInternalContext(ctx)
+
+query, err := withTransactionalMutation(ctx).{{ $entity }}.Query().CollectFields(ctx)
 if err != nil {
 	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionGet, Object: "{{ $entity | toLower }}"})
 }
+
+{{ if $hasWhere }}
+query, err = where.Filter(query)
+if err != nil {
+	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionGet, Object: "{{ $entity | toLower }}"})
+}
+{{- end }}
+
+query = query.Where({{ $entity | toLower }}.SystemOwned(true), {{ $entity | toLower }}.ExternallyVisible(true))
 
 res, err := query.Paginate(
 	ctx,
@@ -80,12 +72,9 @@ res, err := query.Paginate(
 	{{- if $hasOrderBy }}
 	{{ $.EntPackage }}.With{{ $entity }}Order(orderBy),
 	{{- end -}}
-	{{- if $hasWhere }}
-	{{ $.EntPackage }}.With{{ $entity }}Filter(where.Filter),
-	{{- end -}}
 )
 if err != nil {
 	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionGet, Object: "{{ $entity | toLower }}"})
 }
 
-return res, err
+return res, nil

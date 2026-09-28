@@ -1,0 +1,12 @@
+extend type Query {
+    """
+    {{ .ListField }}Catalog lists the externally visible system-owned {{ .ListField }} available for adoption
+    """
+    {{ .ListField }}Catalog({{ .Arguments }}): {{ .Name }}Connection!
+}
+extend type Mutation {
+    """
+    adopt{{ .Name }} copies the externally visible system-owned {{ .LowerName }} into the organization, returning the organization's copy; idempotent per organization
+    """
+    adopt{{ .Name }}(catalogID: ID!, input: Create{{ .Name }}Input): {{ .Name }}CreatePayload!
+}
