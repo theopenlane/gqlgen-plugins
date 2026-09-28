@@ -27,9 +27,10 @@
 
 {{- if eq $object.OperationType "create" }}
 {{- if $object.BulkSequentialCreate }}
-// bulkCreate{{ $object.Name }} uses the CreateBulk function to create multiple {{ $object.Name }} entities
-{{- else }}
 // bulkCreate{{ $object.Name }} creates {{ $object.Name }} entities one at a time
+{{- else }}
+// bulkCreate{{ $object.Name }} uses the CreateBulk function to create multiple {{ $object.Name }} entities
+{{- end }}
 func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, input []*generated.Create{{ $object.Name }}Input) (*{{ $root.ModelPackage }}{{ $object.Name }}BulkCreatePayload, error) {
     c := withTransactionalMutation(ctx)
 {{- if $object.BulkSequentialCreate }}
