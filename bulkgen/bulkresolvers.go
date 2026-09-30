@@ -9,12 +9,15 @@ import (
 	"strings"
 	"text/template"
 
+	"entgo.io/ent/entc"
+	"entgo.io/ent/entc/gen"
 	"github.com/99designs/gqlgen/codegen"
 	"github.com/99designs/gqlgen/codegen/templates"
 	"github.com/99designs/gqlgen/plugin"
 	"github.com/gertd/go-pluralize"
 	"github.com/rs/zerolog/log"
 	"github.com/stoewer/go-strcase"
+	"github.com/theopenlane/entx"
 )
 
 //go:embed bulk.gotpl
@@ -82,8 +85,17 @@ func WithCSVFieldMappingsFile(path string) Options {
 	}
 }
 
+// WithSchemaPath enables bulk create annotations from the ent schemas found at the provided path
+func WithSchemaPath(path string) Options {
+	return func(p *Plugin) {
+		p.SchemaPath = path
+	}
+}
+
 // Plugin is a gqlgen plugin to generate bulk resolver functions used for mutations
 type Plugin struct {
+	// SchemaPath is the package path to the ent schemas
+	SchemaPath string
 	// ModelPackage is the package name for the gqlgen model
 	ModelPackage string
 	// EntGeneratedPackage is the ent generated package that holds the generated types
@@ -133,6 +145,8 @@ type Object struct {
 	OperationType string
 	// HasCSVUpdateMutation indicates if this object has a CSV bulk update mutation
 	HasCSVUpdateMutation bool
+	// BulkSequentialCreate indicates if to use the CreateBulk or create the objects one at a time
+	BulkSequentialCreate bool
 	// CSVFieldMappings contains custom CSV column mappings for this object
 	CSVFieldMappings []CSVFieldMapping
 }
@@ -187,6 +201,28 @@ func loadCSVFieldMappings(filePath string) CSVFieldMappingsJSON {
 	return mappings
 }
 
+// loadBulkCreateSchemas returns a mapping of the available schemas and checks if they have
+// the sequential bulk creation annotaiton or not
+func loadBulkCreateSchemas(path string) (map[string]bool, error) {
+	if path == "" {
+		return nil, nil
+	}
+
+	graph, err := entc.LoadGraph(path, &gen.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("loading bulk create method annotations: %w", err)
+	}
+
+	schemas := make(map[string]bool)
+	for _, node := range graph.Nodes {
+		if annotation, ok := entx.GetAnnotation[*entx.BulkCreateMethodAnnotation](node); ok {
+			schemas[node.Name] = annotation.Sequential
+		}
+	}
+
+	return schemas, nil
+}
+
 // generateSingleFile generates the bulk resolver code, this is all done in a single file and
 // used by the resolvergen plugin for each bulk resolver
 func (m *Plugin) generateSingleFile(data codegen.Data) error {
@@ -234,6 +270,11 @@ func (m *Plugin) generateSingleFile(data codegen.Data) error {
 	// Load CSV field mappings from JSON file if configured
 	csvFieldMappings := loadCSVFieldMappings(m.CSVFieldMappingsFile)
 
+	sequentialBulkSchemaMappings, err := loadBulkCreateSchemas(m.SchemaPath)
+	if err != nil {
+		return err
+	}
+
 	for _, f := range data.Schema.Mutation.Fields {
 		lowerName := strings.ToLower(f.Name)
 
@@ -271,6 +312,7 @@ func (m *Plugin) generateSingleFile(data codegen.Data) error {
 				Fields:               getCreateInputFields(objectName, data),
 				AppendFields:         getUpdateAppendFields(objectName, data),
 				OperationType:        operationType,
+				BulkSequentialCreate: sequentialBulkSchemaMappings[objectName],
 				HasCSVUpdateMutation: csvBulkMutations[objectName],
 				CSVFieldMappings:     csvFieldMappings[objectName],
 			}

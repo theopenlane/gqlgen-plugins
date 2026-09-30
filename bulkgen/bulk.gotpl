@@ -26,9 +26,24 @@
 {{ range $object := .Objects }}
 
 {{- if eq $object.OperationType "create" }}
+{{- if $object.BulkSequentialCreate }}
+// bulkCreate{{ $object.Name }} creates {{ $object.Name }} entities one at a time
+{{- else }}
 // bulkCreate{{ $object.Name }} uses the CreateBulk function to create multiple {{ $object.Name }} entities
+{{- end }}
 func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, input []*generated.Create{{ $object.Name }}Input) (*{{ $root.ModelPackage }}{{ $object.Name }}BulkCreatePayload, error) {
     c := withTransactionalMutation(ctx)
+{{- if $object.BulkSequentialCreate }}
+	res := make([]*generated.{{ $object.Name }}, 0, len(input))
+	for _, data := range input {
+		entity, err := c.{{ $object.Name }}.Create().SetInput(*data).Save(ctx)
+		if err != nil {
+			return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $object.Name | toLower }}"})
+		}
+
+		res = append(res, entity)
+	}
+{{- else }}
 	builders := make([]*generated.{{ $object.Name }}Create, len(input))
 	for i, data := range input {
 		builders[i] = c.{{ $object.Name }}.Create().SetInput(*data)
@@ -38,6 +53,8 @@ func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, in
 	if err != nil {
 		return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $object.Name | toLower }}"})
 	}
+
+{{- end }}
 
 	// return response
 	return &{{ $root.ModelPackage }}{{ $object.Name }}BulkCreatePayload{
