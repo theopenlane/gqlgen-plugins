@@ -1,6 +1,6 @@
 {{ $entity := .Field.TypeReference.Definition.Name | getEntityName -}}
 {{ reserveImport "github.com/theopenlane/gqlgen-plugins/graphutils" }}
-{{ reserveImport $.RuleImport }}
+{{ reserveImport "github.com/theopenlane/iam/auth" }}
 
 {{ $import := print $.EntImport "/" $entity | toLower }}
 {{ reserveImport $import }}
@@ -39,7 +39,7 @@ if orderBy == nil {
 }
 {{- end }}
 
-ctx = {{ $.RulePackage }}.WithInternalContext(ctx)
+ctx = auth.WithInternalReadContext(ctx)
 
 query, err := withTransactionalMutation(ctx).{{ $entity }}.Query().CollectFields(ctx)
 if err != nil {
