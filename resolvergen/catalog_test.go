@@ -159,7 +159,7 @@ func TestRenderCatalogListTemplate(t *testing.T) {
 
 	assert.Contains(t, rendered, "first, last = graphutils.SetFirstLastDefaults(first, last, r.maxResultLimit)")
 	assert.Contains(t, rendered, "orderBy = []*generated.StandardOrder{ { Field: generated.StandardOrderFieldCreatedAt, Direction: entgql.OrderDirectionDesc, }, }")
-	assert.Contains(t, rendered, "ctx = rule.WithInternalContext(ctx)")
+	assert.Contains(t, rendered, "ctx = auth.WithInternalReadContext(ctx)")
 	assert.Contains(t, rendered, "query, err := withTransactionalMutation(ctx).Standard.Query().CollectFields(ctx)")
 	assert.Contains(t, rendered, "query, err = where.Filter(query)")
 	assert.Contains(t, rendered, "query = query.Where(standard.SystemOwned(true), standard.ExternallyVisible(true))")
