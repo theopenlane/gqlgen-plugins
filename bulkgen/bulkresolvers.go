@@ -202,7 +202,7 @@ func loadCSVFieldMappings(filePath string) CSVFieldMappingsJSON {
 }
 
 // loadBulkCreateSchemas returns a mapping of the available schemas and checks if they have
-// the sequential bulk creation annotaiton or not
+// the sequential bulk creation annotation or not
 func loadBulkCreateSchemas(path string) (map[string]bool, error) {
 	if path == "" {
 		return nil, nil
@@ -214,6 +214,7 @@ func loadBulkCreateSchemas(path string) (map[string]bool, error) {
 	}
 
 	schemas := make(map[string]bool)
+
 	for _, node := range graph.Nodes {
 		if annotation, ok := entx.GetAnnotation[*entx.BulkCreateMethodAnnotation](node); ok {
 			schemas[node.Name] = annotation.Sequential

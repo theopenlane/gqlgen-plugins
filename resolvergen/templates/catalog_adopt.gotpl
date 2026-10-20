@@ -1,6 +1,6 @@
 {{ reserveImport "errors" }}
 {{ reserveImport "github.com/theopenlane/utils/rout" }}
-{{ reserveImport "github.com/theopenlane/core/v2/pkg/logx" }}
+{{ reserveImport "github.com/theopenlane/logx" }}
 {{ reserveImport "github.com/theopenlane/iam/auth" }}
 {{ reserveImport $.EntityOpsImport }}
 {{ reserveImport $.JSONXImport }}
