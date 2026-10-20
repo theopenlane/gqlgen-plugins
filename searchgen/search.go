@@ -288,11 +288,5 @@ func genSearchResolver(data *codegen.Data, inputData SearchResolverBuild, resolv
 
 // isIDField checks if the field is an ID field
 func isIDField(f string, idFields []string) bool {
-	for _, idField := range idFields {
-		if f == idField {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(idFields, f)
 }

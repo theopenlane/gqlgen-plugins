@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -29,7 +28,7 @@ func TestSetFirstLastDefaults(t *testing.T) {
 		},
 		{
 			name:          "first greater than maxPageSize",
-			first:         lo.ToPtr(15),
+			first:         new(15),
 			last:          nil,
 			expectedFirst: &maxPageSize,
 			expectedLast:  nil,
@@ -37,7 +36,7 @@ func TestSetFirstLastDefaults(t *testing.T) {
 		{
 			name:          "last greater than maxPageSize",
 			first:         nil,
-			last:          lo.ToPtr(15),
+			last:          new(15),
 			expectedFirst: nil,
 			expectedLast:  &maxPageSize,
 		},
