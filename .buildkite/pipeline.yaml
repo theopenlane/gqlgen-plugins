@@ -20,7 +20,7 @@ env:
 
 # defaults
 agents:
-  queue: $LARGE_RUNNER_QUEUE
+  queue: $SMALL_RUNNER_QUEUE
   workload: $RUNNER_WORKLOAD_LIGHTWEIGHT
 
 # cache for hosted runners
