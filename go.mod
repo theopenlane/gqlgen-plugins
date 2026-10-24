@@ -1,18 +1,18 @@
 module github.com/theopenlane/gqlgen-plugins
 
-go 1.27.2
+go 1.27.3
 
 require (
 	entgo.io/contrib v0.7.0
 	entgo.io/ent v0.14.6
-	github.com/99designs/gqlgen v0.17.97
+	github.com/99designs/gqlgen v0.17.98
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/rs/zerolog v1.35.1
 	github.com/samber/lo v1.53.0
 	github.com/stoewer/go-strcase v1.3.1
 	github.com/stretchr/testify v1.12.1
-	github.com/theopenlane/entx v0.36.2
-	github.com/vektah/gqlparser/v2 v2.5.63
+	github.com/theopenlane/entx v0.36.3
+	github.com/vektah/gqlparser/v2 v2.5.64
 	golang.org/x/text v0.43.0
 )
 
@@ -37,7 +37,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.32 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/sosodev/duration v1.4.0 // indirect
-	github.com/theopenlane/utils v0.7.3 // indirect
+	github.com/theopenlane/utils v0.7.4 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/zclconf/go-cty v1.19.0 // indirect
