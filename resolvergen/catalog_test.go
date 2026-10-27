@@ -2,6 +2,8 @@ package resolvergen
 
 import (
 	"bytes"
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,6 +37,10 @@ extend type Mutation {
     adoptControlObjective copies the externally visible system-owned controlObjective into the organization, returning the organization's copy; idempotent per organization
     """
     adoptControlObjective(catalogID: ID!, input: CreateControlObjectiveInput): ControlObjectiveCreatePayload!
+    """
+    unlinkControlObjectiveCatalog detaches the organization's controlObjective from the catalog so catalog refreshes no longer apply to it; idempotent
+    """
+    unlinkControlObjectiveCatalog(id: ID!): ControlObjectiveUpdatePayload!
 }
 `
 
@@ -49,6 +55,10 @@ extend type Mutation {
     adoptStandard copies the externally visible system-owned standard into the organization, returning the organization's copy; idempotent per organization
     """
     adoptStandard(catalogID: ID!, input: CreateStandardInput): StandardCreatePayload!
+    """
+    unlinkStandardCatalog detaches the organization's standard from the catalog so catalog refreshes no longer apply to it; idempotent
+    """
+    unlinkStandardCatalog(id: ID!): StandardUpdatePayload!
 }
 `
 
@@ -72,6 +82,9 @@ func renderCatalogTemplate(t *testing.T, name string, input *crudResolver) strin
 	var out bytes.Buffer
 
 	require.NoError(t, tmpl.Execute(&out, input))
+
+	_, err = parser.ParseFile(token.NewFileSet(), name+".go", "package p\nfunc f() {\n"+out.String()+"\n}", parser.AllErrors)
+	require.NoError(t, err, "rendered %s must parse as Go", name)
 
 	return normalizeWhitespace(out.String())
 }
@@ -100,6 +113,15 @@ func catalogAdoptField() *codegen.Field {
 		FieldDefinition: &ast.FieldDefinition{Name: "adoptStandard"},
 		GoFieldName:     "AdoptStandard",
 		TypeReference:   &config.TypeReference{Definition: &ast.Definition{Name: "StandardCreatePayload"}},
+		Object:          &codegen.Object{Definition: &ast.Definition{Name: "Mutation"}},
+	}
+}
+
+func catalogUnlinkField() *codegen.Field {
+	return &codegen.Field{
+		FieldDefinition: &ast.FieldDefinition{Name: "unlinkStandardCatalog"},
+		GoFieldName:     "UnlinkStandardCatalog",
+		TypeReference:   &config.TypeReference{Definition: &ast.Definition{Name: "StandardUpdatePayload"}},
 		Object:          &codegen.Object{Definition: &ast.Definition{Name: "Mutation"}},
 	}
 }
@@ -182,12 +204,32 @@ func TestRenderCatalogAdoptTemplate(t *testing.T) {
 
 	assert.Contains(t, rendered, "ctx, err := common.SetOrganizationInAuthContext(ctx, nil)")
 	assert.Contains(t, rendered, "orgID, err := auth.GetOrganizationIDFromContext(ctx)")
-	assert.Contains(t, rendered, "overlay, err := jsonx.ToRawMessage(input)")
-	assert.Contains(t, rendered, "id, _, err := entityops.SchemaStandard.Adopt(ctx, withTransactionalMutation(ctx), catalogID, orgID, overlay)")
-	assert.Contains(t, rendered, "case errors.Is(err, entityops.ErrCatalogRowNotSystemOwned), errors.Is(err, entityops.ErrCatalogRowNotVisible): return nil, common.NewNotFoundError(\"standard\")")
+	assert.Contains(t, rendered, "source := json.RawMessage(\"{}\")")
+	assert.Contains(t, rendered, "if source, err = jsonx.ToRawMessage(input); err != nil")
+	assert.Contains(t, rendered, "source, _, err = jsonx.SetObjectKey(source, entityops.CatalogPointerField, catalogID)")
+	assert.Contains(t, rendered, "id, err := entityops.SchemaStandard.Reconcile(ctx, withTransactionalMutation(ctx), orgID, source)")
+	assert.NotContains(t, rendered, ".Adopt(")
+	assert.Contains(t, rendered, "case errors.Is(err, entityops.ErrCatalogRowNotFound): return nil, common.NewNotFoundError(\"standard\")")
 	assert.Contains(t, rendered, "case err != nil: return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: \"standard\"})")
 	assert.Contains(t, rendered, "res, err := withTransactionalMutation(ctx).Standard.Get(ctx, id)")
 	assert.Contains(t, rendered, "return &model.StandardCreatePayload{ Standard: res, }, nil")
+}
+
+func TestRenderCatalogUnlinkTemplate(t *testing.T) {
+	rendered := renderCatalogTemplate(t, "catalog_unlink.gotpl", &crudResolver{
+		Field:            catalogUnlinkField(),
+		ModelPackage:     "model",
+		EntImport:        "github.com/example/internal/ent/generated",
+		EntPackage:       "generated",
+		EntityOpsImport:  "github.com/example/internal/ent/entityops",
+		EntityOpsPackage: "entityops",
+	})
+
+	assert.Contains(t, rendered, "ctx, err := common.SetOrganizationInAuthContext(ctx, nil)")
+	assert.Contains(t, rendered, "if err := entityops.SchemaStandard.Unlink(ctx, withTransactionalMutation(ctx), id); err != nil { return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionUpdate, Object: \"standard\"}) }")
+	assert.Contains(t, rendered, "res, err := withTransactionalMutation(ctx).Standard.Get(ctx, id)")
+	assert.Contains(t, rendered, "return &model.StandardUpdatePayload{ Standard: res, }, nil")
+	assert.NotContains(t, rendered, "WithInternalReadContext")
 }
 
 func TestIsCatalogField(t *testing.T) {
@@ -197,11 +239,17 @@ func TestIsCatalogField(t *testing.T) {
 	assert.False(t, plugin.isAdoptMutation(catalogListField()))
 	assert.True(t, plugin.isAdoptMutation(catalogAdoptField()))
 	assert.False(t, plugin.isCatalogQuery(catalogAdoptField()))
+	assert.True(t, plugin.isUnlinkMutation(catalogUnlinkField()))
+	assert.False(t, plugin.isUnlinkMutation(catalogListField()))
+	assert.False(t, plugin.isUnlinkMutation(catalogAdoptField()))
+	assert.False(t, plugin.isAdoptMutation(catalogUnlinkField()))
+	assert.False(t, plugin.isCatalogQuery(catalogUnlinkField()))
 
 	other := New()
 
 	assert.False(t, other.isCatalogQuery(catalogListField()))
 	assert.False(t, other.isAdoptMutation(catalogAdoptField()))
+	assert.False(t, other.isUnlinkMutation(catalogUnlinkField()))
 }
 
 func TestRenderListTemplateCatalogDefaultFilter(t *testing.T) {

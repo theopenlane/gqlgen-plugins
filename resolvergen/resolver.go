@@ -42,7 +42,7 @@ type ResolverPlugin struct {
 	forceRegenerateBulkResolvers bool
 	// archivableSchemas is a map of schema names that can have a status of archived
 	archivableSchemas map[string]bool
-	// catalogSchemas are the schemas that expose a catalog query and an adopt mutation
+	// catalogSchemas get catalog resolvers
 	catalogSchemas map[string]bool
 	// rulePackage is the import path for the privacy rule package
 	rulePackage string
@@ -111,7 +111,7 @@ func WithArchivableSchemas(schemas []string) Options {
 	}
 }
 
-// WithCatalogSchemas sets schemas that expose a catalog query and an adopt mutation
+// WithCatalogSchemas sets the schemas that get catalog resolvers
 func WithCatalogSchemas(schemas []string) Options {
 	return func(p *ResolverPlugin) {
 		p.catalogSchemas = map[string]bool{}
@@ -173,6 +173,8 @@ func (r *ResolverPlugin) Implement(s string, f *codegen.Field) (val string) {
 		return r.renderCatalogList(f)
 	case r.isAdoptMutation(f):
 		return r.renderCatalogAdopt(f)
+	case r.isUnlinkMutation(f):
+		return r.renderCatalogUnlink(f)
 	case isMutation(f), isInput(f):
 		return r.mutationImplementer(f)
 	case isQuery(f):
@@ -231,6 +233,11 @@ func (r *ResolverPlugin) isCatalogQuery(f *codegen.Field) bool {
 // isAdoptMutation returns true if the field is the adopt mutation of a catalog schema
 func (r *ResolverPlugin) isAdoptMutation(f *codegen.Field) bool {
 	return isMutation(f) && strings.HasPrefix(f.GoFieldName, AdoptOperation) && r.catalogSchemas[getEntityName(f.TypeReference.Definition.Name)]
+}
+
+// isUnlinkMutation reports whether the field is a catalog schema's unlink mutation
+func (r *ResolverPlugin) isUnlinkMutation(f *codegen.Field) bool {
+	return isMutation(f) && strings.HasPrefix(f.GoFieldName, UnlinkOperation) && strings.HasSuffix(f.GoFieldName, CatalogOperation) && r.catalogSchemas[getEntityName(f.TypeReference.Definition.Name)]
 }
 
 func isWorkflowResolverField(f *codegen.Field) bool {

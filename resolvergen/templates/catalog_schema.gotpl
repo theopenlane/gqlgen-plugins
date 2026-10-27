@@ -9,4 +9,8 @@ extend type Mutation {
     adopt{{ .Name }} copies the externally visible system-owned {{ .LowerName }} into the organization, returning the organization's copy; idempotent per organization
     """
     adopt{{ .Name }}(catalogID: ID!, input: Create{{ .Name }}Input): {{ .Name }}CreatePayload!
+    """
+    unlink{{ .Name }}Catalog detaches the organization's {{ .LowerName }} from the catalog so catalog refreshes no longer apply to it; idempotent
+    """
+    unlink{{ .Name }}Catalog(id: ID!): {{ .Name }}UpdatePayload!
 }

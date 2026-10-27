@@ -1,3 +1,4 @@
+{{ reserveImport "encoding/json" }}
 {{ reserveImport "errors" }}
 {{ reserveImport "github.com/theopenlane/utils/rout" }}
 {{ reserveImport "github.com/theopenlane/logx" }}
@@ -25,15 +26,23 @@ if err != nil {
 	return nil, rout.ErrPermissionDenied
 }
 
-overlay, err := {{ $.JSONXPackage }}.ToRawMessage(input)
+source := json.RawMessage("{}")
+
+if input != nil {
+	if source, err = {{ $.JSONXPackage }}.ToRawMessage(input); err != nil {
+		return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $entity | toLower }}"})
+	}
+}
+
+source, _, err = {{ $.JSONXPackage }}.SetObjectKey(source, {{ $.EntityOpsPackage }}.CatalogPointerField, catalogID)
 if err != nil {
 	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $entity | toLower }}"})
 }
 
-id, _, err := {{ $.EntityOpsPackage }}.Schema{{ $entity }}.Adopt(ctx, withTransactionalMutation(ctx), catalogID, orgID, overlay)
+id, err := {{ $.EntityOpsPackage }}.Schema{{ $entity }}.Reconcile(ctx, withTransactionalMutation(ctx), orgID, source)
 
 switch {
-case errors.Is(err, {{ $.EntityOpsPackage }}.ErrCatalogRowNotSystemOwned), errors.Is(err, {{ $.EntityOpsPackage }}.ErrCatalogRowNotVisible):
+case errors.Is(err, {{ $.EntityOpsPackage }}.ErrCatalogRowNotFound):
 	return nil, common.NewNotFoundError("{{ $entity | toLower }}")
 case err != nil:
 	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $entity | toLower }}"})

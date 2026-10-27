@@ -234,6 +234,19 @@ func (r *ResolverPlugin) renderCatalogAdopt(field *codegen.Field) string {
 	}, []string{})
 }
 
+// renderCatalogUnlink renders the catalog unlink template
+func (r *ResolverPlugin) renderCatalogUnlink(field *codegen.Field) string {
+	return renderTemplate("catalog_unlink.gotpl", &crudResolver{
+		Field:            field,
+		ModelPackage:     r.modelPackage,
+		EntImport:        r.entGeneratedPackage,
+		EntPackage:       getEntPackageFromImport(r.entGeneratedPackage),
+		GraphQLImport:    r.graphqlImport,
+		EntityOpsImport:  r.entityOpsPackage,
+		EntityOpsPackage: getEntPackageFromImport(r.entityOpsPackage),
+	}, []string{})
+}
+
 const (
 	CreateOperation  = "Create"
 	UpdateOperation  = "Update"
@@ -247,6 +260,7 @@ const (
 	Connection       = "Connection"
 	Payload          = "Payload"
 	AdoptOperation   = "Adopt"
+	UnlinkOperation  = "Unlink"
 	CatalogOperation = "Catalog"
 )
 
