@@ -39,6 +39,47 @@ named `generated` it is added as an alias.
 api.AddPlugin(searchgen.New("github.com/theopenlane/core/v2/internal/ent/generated")), // add the search plugin
 ```
 
+## GroupBy
+
+Generates paginated group by queries, returning the number of rows for each distinct value of a field. Mark
+string or enum fields with the `groupby.Groupable()` annotation:
+
+```go
+field.String("cve_id").
+	Optional().
+	Annotations(groupby.Groupable())
+```
+
+Write the SDL into the graphql schema directory before running gqlgen, the `resolvergen` plugin then implements
+the resolvers:
+
+```go
+if err := resolverPlugin.WriteGroupBySchema("./internal/ent/schema", "internal/graphapi/schema"); err != nil {
+	log.Fatal().Err(err).Msg("failed to write group by schema")
+}
+```
+
+Each schema with groupable fields gets a `<listQuery>GroupBy` query, e.g.:
+
+```graphql
+vulnerabilitiesGroupBy(field: CVE_ID, where: {...}, orderBy: {field: COUNT, direction: DESC}, first: 25) {
+  edges {
+    cursor
+    node {
+      key
+      count
+      vulnerabilities(first: 10) { edges { node { id displayName severity } } pageInfo { hasNextPage endCursor } }
+    }
+  }
+  pageInfo { hasNextPage endCursor }
+  totalCount
+}
+```
+
+Each bucket exposes the grouped rows through the schema's normal connection, filtered to the group. The rows are
+only queried when selected, one paginated query per bucket on the page. Rows without a value are grouped under a
+`null` key.
+
 ## Usage
 
 Add the plugins to the `generate.go` `main` function to be included in the

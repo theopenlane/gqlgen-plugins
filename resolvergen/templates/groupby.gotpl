@@ -1,0 +1,63 @@
+{{ $entity := .Entity -}}
+{{ reserveImport "github.com/theopenlane/gqlgen-plugins/graphutils" }}
+{{ reserveImport "github.com/theopenlane/gqlgen-plugins/groupby" }}
+
+{{ reserveImport "errors" }}
+{{ $import := print $.EntImport "/" $entity | toLower }}
+{{ reserveImport $import }}
+{{ reserveImport (print $.EntImport "/predicate") }}
+
+{{- if $.GraphQLImport }}
+{{ reserveImport $.GraphQLImport }}
+{{- end }}
+
+// set page limit if nothing was set
+first, last = graphutils.SetFirstLastDefaults(first, last, r.maxResultLimit)
+
+var column string
+
+switch field {
+{{- range $.GroupByFields }}
+case {{ modelPackage $.ModelPackage }}{{ .EnumConstant }}:
+	column = {{ $entity | toLower }}.{{ .Constant }}
+{{- end }}
+default:
+	return nil, parseRequestError(ctx, groupby.ErrInvalidField, common.Action{Action: common.ActionGet, Object: "{{ $entity | toLower }}"})
+}
+
+{{ template "archivedStatusFilter" . }}
+
+var (
+	filter predicate.{{ $entity }}
+	rows   []groupby.Row
+	total  int
+	err    error
+)
+
+query := withTransactionalMutation(ctx).{{ $entity }}.Query()
+
+if where != nil {
+	filter, err = where.P()
+	if err != nil && !errors.Is(err, {{ $.EntPackage }}.ErrEmpty{{ $entity }}WhereInput) {
+		return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionGet, Object: "{{ $entity | toLower }}"})
+	}
+}
+
+if filter != nil {
+	query = query.Where(filter)
+}
+
+groupQuery := groupby.NewQuery(column, filter, orderBy, after, first, before, last)
+
+if err := query.Clone().Modify(groupQuery.Modifier).Scan(ctx, &rows); err != nil {
+	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionGet, Object: "{{ $entity | toLower }}"})
+}
+
+if graphutils.CheckForRequestedField(ctx, "totalCount") {
+	total, err = query.Modify(groupQuery.TotalModifier).Int(ctx)
+	if err != nil {
+		return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionGet, Object: "{{ $entity | toLower }}"})
+	}
+}
+
+return groupQuery.Connection(rows, total), nil

@@ -171,6 +171,10 @@ func (r *ResolverPlugin) Implement(s string, f *codegen.Field) (val string) {
 	switch {
 	case r.isCatalogQuery(f):
 		return r.renderCatalogList(f)
+	case isGroupByQuery(f):
+		return r.renderGroupBy(f)
+	case isGroupByRowsField(f):
+		return r.renderList(f)
 	case r.isAdoptMutation(f):
 		return r.renderCatalogAdopt(f)
 	case isMutation(f), isInput(f):

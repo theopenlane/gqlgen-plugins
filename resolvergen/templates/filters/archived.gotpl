@@ -1,0 +1,13 @@
+{{ define "archivedStatusFilter" }}
+{{- if hasStatusField $.Entity }}
+{{ reserveImport "github.com/theopenlane/core/v2/pkg/enums" }}
+// apply default status filtering to exclude archived items unless they are explicitly requested
+if where == nil {
+	where = &{{ $.EntPackage }}.{{ $.Entity }}WhereInput{}
+}
+if where.Status == nil && where.StatusNEQ == nil && where.StatusIn == nil && where.StatusNotIn == nil {
+	archivedStatus := {{ getArchivedStatusValue $.Entity }}
+	where.StatusNEQ = &archivedStatus
+}
+{{- end }}
+{{- end }}

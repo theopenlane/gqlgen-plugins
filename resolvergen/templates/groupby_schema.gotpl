@@ -1,0 +1,115 @@
+directive @goEnum(value: String) on ENUM_VALUE
+"""
+GroupByOrderField is the field group by buckets are ordered by
+"""
+enum GroupByOrderField @goModel(model: "github.com/theopenlane/gqlgen-plugins/groupby.OrderField") {
+    COUNT @goEnum(value: "github.com/theopenlane/gqlgen-plugins/groupby.OrderFieldCount")
+    KEY @goEnum(value: "github.com/theopenlane/gqlgen-plugins/groupby.OrderFieldKey")
+}
+"""
+GroupByOrder is the ordering of group by buckets
+"""
+input GroupByOrder @goModel(model: "github.com/theopenlane/gqlgen-plugins/groupby.Order") {
+    """
+    The ordering direction
+    """
+    direction: OrderDirection! = DESC
+    """
+    The field by which to order the groups
+    """
+    field: GroupByOrderField! = COUNT
+}
+{{- range . }}
+"""
+{{ .Name }}GroupByField are the {{ .Name }} fields that can be grouped on
+"""
+enum {{ .Name }}GroupByField {
+{{- range .EnumValues }}
+    {{ . }}
+{{- end }}
+}
+"""
+{{ .Name }}GroupByBucket is a group of {{ .ListField }} sharing the same value for the grouped field
+"""
+type {{ .Name }}GroupByBucket @goModel(model: "github.com/theopenlane/gqlgen-plugins/groupby.Bucket") {
+    """
+    The grouped value, null when the rows have no value
+    """
+    key: String
+    """
+    The number of {{ .ListField }} in the group
+    """
+    count: Int!
+    """
+    The {{ .ListField }} in the group
+    """
+    {{ .ListField }}({{ .ListArguments }}): {{ .ListType }} @goField(forceResolver: true)
+}
+"""
+{{ .Name }}GroupByEdge is a {{ .Name }} group by bucket with its pagination cursor
+"""
+type {{ .Name }}GroupByEdge @goModel(model: "github.com/theopenlane/gqlgen-plugins/groupby.Edge") {
+    """
+    The bucket at the end of the edge
+    """
+    node: {{ .Name }}GroupByBucket!
+    """
+    A cursor for use in pagination
+    """
+    cursor: Cursor!
+}
+"""
+{{ .Name }}GroupByConnection is a paginated list of {{ .Name }} group by buckets
+"""
+type {{ .Name }}GroupByConnection @goModel(model: "github.com/theopenlane/gqlgen-plugins/groupby.Connection") {
+    """
+    A list of edges
+    """
+    edges: [{{ .Name }}GroupByEdge!]!
+    """
+    Information to aid in pagination
+    """
+    pageInfo: PageInfo!
+    """
+    Identifies the total count of groups in the connection
+    """
+    totalCount: Int!
+}
+{{- end }}
+extend type Query {
+{{- range . }}
+    """
+    {{ .QueryName }} groups {{ .ListField }} by a field and returns each group with its count and rows
+    """
+    {{ .QueryName }}(
+        """
+        The field to group by
+        """
+        field: {{ .Name }}GroupByField!
+        """
+        Filtering options for {{ .ListField }} included in the groups
+        """
+        where: {{ .WhereInput }}
+        """
+        Ordering options for the groups, defaults to count descending
+        """
+        orderBy: GroupByOrder
+        """
+        Returns the groups that come after the specified cursor
+        """
+        after: Cursor
+        """
+        Returns the first _n_ groups
+        """
+        first: Int
+        """
+        Returns the groups that come before the specified cursor
+        """
+        before: Cursor
+        """
+        Returns the last _n_ groups
+        """
+        last: Int
+    ): {{ .Name }}GroupByConnection!
+{{- end }}
+}
