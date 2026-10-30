@@ -194,6 +194,18 @@ func TestIsGroupByRowsField(t *testing.T) {
 	assert.False(t, isGroupByRowsField(catalogListField()))
 }
 
+func TestIsGroupByResolver(t *testing.T) {
+	assert.True(t, isGroupByResolver(groupByQueryField()))
+	assert.True(t, isGroupByResolver(groupByRowsField()))
+	assert.False(t, isGroupByResolver(catalogListField()))
+}
+
+func TestImplementKeepsCustomResolverForNonGroupByField(t *testing.T) {
+	custom := "return customImplementation(ctx)"
+
+	assert.Equal(t, custom, New().Implement(custom, catalogListField()))
+}
+
 func TestRenderListTemplateBucketFilter(t *testing.T) {
 	field := groupByRowsField()
 

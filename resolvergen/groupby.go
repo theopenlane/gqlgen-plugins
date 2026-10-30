@@ -29,6 +29,11 @@ func isGroupByRowsField(f *codegen.Field) bool {
 	return f.Object != nil && strings.HasSuffix(f.Object.Name, groupByBucketSuffix) && strings.HasSuffix(f.TypeReference.Definition.Name, Connection)
 }
 
+// isGroupByResolver returns true if the field is a generated group by query or a bucket's nested rows connection
+func isGroupByResolver(f *codegen.Field) bool {
+	return isGroupByQuery(f) || isGroupByRowsField(f)
+}
+
 // renderGroupBy renders the group by template
 func (r *ResolverPlugin) renderGroupBy(f *codegen.Field) string {
 	entity, fields := groupByResolverFields(f)
