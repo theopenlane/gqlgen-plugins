@@ -54,7 +54,7 @@ func (r *ResolverPlugin) WriteCatalogSchema(schemaDir string) error {
 			return fmt.Errorf("%w: %s", ErrCatalogListQueryNotFound, name)
 		}
 
-		content, err := renderCatalogSchema(catalogSchema{
+		content, err := renderSchemaTemplate("catalog_schema.gotpl", catalogSchema{
 			Name:      name,
 			LowerName: strcase.LowerCamelCase(name),
 			ListField: field.Name,
@@ -119,7 +119,7 @@ func loadConnectionQueryFields(schemaDir string) (map[string]*ast.FieldDefinitio
 
 // isConnectionListQuery reports whether the field is the entity's connection list query, which carries a where argument
 func isConnectionListQuery(field *ast.FieldDefinition) bool {
-	return strings.HasSuffix(field.Type.Name(), Connection) && field.Arguments.ForName("where") != nil
+	return strings.HasSuffix(field.Type.Name(), Connection) && field.Arguments.ForName(whereArg) != nil
 }
 
 // renderArguments renders the argument definitions as an inline SDL argument list
@@ -133,9 +133,9 @@ func renderArguments(args ast.ArgumentDefinitionList) string {
 	return strings.Join(rendered, ", ")
 }
 
-// renderCatalogSchema renders the catalog SDL template for one schema
-func renderCatalogSchema(input catalogSchema) ([]byte, error) {
-	t, err := template.New("catalog_schema.gotpl").ParseFS(templates, "templates/catalog_schema.gotpl")
+// renderSchemaTemplate renders an SDL template with the given input
+func renderSchemaTemplate(templateName string, input any) ([]byte, error) {
+	t, err := template.New(templateName).ParseFS(templates, "templates/"+templateName)
 	if err != nil {
 		return nil, err
 	}

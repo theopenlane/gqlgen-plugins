@@ -52,8 +52,8 @@ extend type Mutation {
 }
 `
 
-// renderCatalogTemplate renders a catalog template with stubs for the funcs gqlgen normally supplies
-func renderCatalogTemplate(t *testing.T, name string, input *crudResolver) string {
+// renderTestTemplate renders a resolver template with stubs for the funcs gqlgen normally supplies
+func renderTestTemplate(t *testing.T, name string, input *crudResolver) string {
 	t.Helper()
 
 	tmpl, err := template.New(name).Funcs(template.FuncMap{
@@ -66,7 +66,7 @@ func renderCatalogTemplate(t *testing.T, name string, input *crudResolver) strin
 		"isListType":             isListType,
 		"modelPackage":           modelPackage,
 		"reserveImport":          func(...string) string { return "" },
-	}).ParseFS(templates, "templates/"+name)
+	}).ParseFS(templates, "templates/"+name, "templates/"+filterTemplates)
 	require.NoError(t, err)
 
 	var out bytes.Buffer
@@ -149,7 +149,7 @@ func TestWriteCatalogSchemaErrors(t *testing.T) {
 }
 
 func TestRenderCatalogListTemplate(t *testing.T) {
-	rendered := renderCatalogTemplate(t, "catalog_list.gotpl", &crudResolver{
+	rendered := renderTestTemplate(t, "catalog_list.gotpl", &crudResolver{
 		Field:       catalogListField(),
 		EntImport:   "github.com/example/internal/ent/generated",
 		EntPackage:  "generated",
@@ -169,7 +169,7 @@ func TestRenderCatalogListTemplate(t *testing.T) {
 }
 
 func TestRenderCatalogAdoptTemplate(t *testing.T) {
-	rendered := renderCatalogTemplate(t, "catalog_adopt.gotpl", &crudResolver{
+	rendered := renderTestTemplate(t, "catalog_adopt.gotpl", &crudResolver{
 		Field:            catalogAdoptField(),
 		ModelPackage:     "model",
 		EntImport:        "github.com/example/internal/ent/generated",
@@ -209,7 +209,7 @@ func TestRenderListTemplateCatalogDefaultFilter(t *testing.T) {
 	field.FieldDefinition.Name = "standards"
 	field.GoFieldName = "Standards"
 
-	rendered := renderCatalogTemplate(t, "list.gotpl", &crudResolver{
+	rendered := renderTestTemplate(t, "list.gotpl", &crudResolver{
 		Field:          field,
 		EntImport:      "github.com/example/internal/ent/generated",
 		EntPackage:     "generated",
@@ -218,7 +218,7 @@ func TestRenderListTemplateCatalogDefaultFilter(t *testing.T) {
 
 	assert.Contains(t, rendered, "if where.SystemOwned == nil && where.SystemOwnedNEQ == nil { systemOwned := false where.SystemOwned = &systemOwned }")
 
-	plain := renderCatalogTemplate(t, "list.gotpl", &crudResolver{
+	plain := renderTestTemplate(t, "list.gotpl", &crudResolver{
 		Field:      field,
 		EntImport:  "github.com/example/internal/ent/generated",
 		EntPackage: "generated",

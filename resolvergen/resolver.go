@@ -164,13 +164,18 @@ func (r *ResolverPlugin) Implement(s string, f *codegen.Field) (val string) {
 	// if the field has a custom resolver, use it
 	// panic is not a custom resolver so attempt to implement the field
 	// regenerate bulk operations if forceRegenerateBulkResolvers is enabled
-	if s != "" && !strings.Contains(s, "panic") && !r.shouldRegenerateBulkResolver(f) {
+	// group by resolvers are fully generated, so always regenerate them to pick up new groupable fields
+	if s != "" && !strings.Contains(s, "panic") && !r.shouldRegenerateBulkResolver(f) && !isGroupByResolver(f) {
 		return s
 	}
 
 	switch {
 	case r.isCatalogQuery(f):
 		return r.renderCatalogList(f)
+	case isGroupByQuery(f):
+		return r.renderGroupBy(f)
+	case isGroupByRowsField(f):
+		return r.renderList(f)
 	case r.isAdoptMutation(f):
 		return r.renderCatalogAdopt(f)
 	case isMutation(f), isInput(f):

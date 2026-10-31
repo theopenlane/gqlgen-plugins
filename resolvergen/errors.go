@@ -16,3 +16,9 @@ var ErrCatalogListQueryNotFound = errors.New("catalog schema has no connection q
 
 // ErrCatalogPackagesRequired is returned when catalog schemas are set without the rule, entityops, and jsonx packages
 var ErrCatalogPackagesRequired = errors.New("rule, entityops, and jsonx packages are required for catalog schemas")
+
+// ErrGroupByListQueryNotFound is returned when a schema with groupable fields has no connection query to derive the group by query from
+var ErrGroupByListQueryNotFound = errors.New("group by schema has no connection query")
+
+// ErrGroupByFieldType is returned when a groupable field is not a string or enum
+var ErrGroupByFieldType = errors.New("groupable fields must be a string or enum")

@@ -17,6 +17,9 @@ import (
 //go:embed templates/**.gotpl templates/**/**.gotpl
 var templates embed.FS
 
+// filterTemplates are the shared where filter child templates for list style resolvers
+const filterTemplates = "filters/*.gotpl"
+
 // crudResolver is a struct to hold the field for the CRUD resolver
 type crudResolver struct {
 	// Field is the field for the CRUD resolver
@@ -53,6 +56,12 @@ type crudResolver struct {
 	JSONXImport string
 	// JSONXPackage is the package name for the jsonx package
 	JSONXPackage string
+	// Entity is the schema name the resolver operates on
+	Entity string
+	// GroupByFields are the group by enum values mapped to their ent field constants
+	GroupByFields []groupByResolverField
+	// BucketFilter scopes a list resolver to the rows of its parent group by bucket
+	BucketFilter bool
 }
 
 // renderTemplate renders the template with the given name
@@ -204,7 +213,9 @@ func (r *ResolverPlugin) renderList(field *codegen.Field) string {
 		GraphQLImport:     r.graphqlImport,
 		ArchivableSchemas: r.archivableSchemas,
 		CatalogSchemas:    r.catalogSchemas,
-	}, []string{})
+		Entity:            getEntityName(field.TypeReference.Definition.Name),
+		BucketFilter:      isGroupByRowsField(field),
+	}, []string{filterTemplates})
 }
 
 // renderCatalogList renders the catalog list template
