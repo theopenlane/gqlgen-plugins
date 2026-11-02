@@ -1,0 +1,31 @@
+{{ reserveImport "github.com/theopenlane/utils/rout" }}
+{{ reserveImport "github.com/theopenlane/core/v2/pkg/logx" }}
+{{ reserveImport $.EntityOpsImport }}
+
+{{- if $.GraphQLImport }}
+{{ reserveImport $.GraphQLImport }}
+{{- end }}
+
+{{ $entity := .Field.TypeReference.Definition.Name | getEntityName  -}}
+{{ $modelPackage := .ModelPackage | modelPackage -}}
+
+// set the organization in the auth context if its not done for us
+ctx, err := common.SetOrganizationInAuthContext(ctx, nil)
+if err != nil {
+	logx.FromContext(ctx).Error().Err(err).Msg("failed to set organization in auth context")
+
+	return nil, rout.NewMissingRequiredFieldError("owner_id")
+}
+
+if err := {{ $.EntityOpsPackage }}.Schema{{ $entity }}.Unlink(ctx, withTransactionalMutation(ctx), id); err != nil {
+	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionUpdate, Object: "{{ $entity | toLower }}"})
+}
+
+res, err := withTransactionalMutation(ctx).{{ $entity }}.Get(ctx, id)
+if err != nil {
+	return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionGet, Object: "{{ $entity | toLower }}"})
+}
+
+return &{{ $modelPackage }}{{ $entity }}UpdatePayload{
+	{{ $entity }}: res,
+}, nil
