@@ -216,7 +216,7 @@ func TestRenderCatalogAdoptTemplate(t *testing.T) {
 }
 
 func TestRenderCatalogUnlinkTemplate(t *testing.T) {
-	rendered := renderCatalogTemplate(t, "catalog_unlink.gotpl", &crudResolver{
+	rendered := renderTestTemplate(t, "catalog_unlink.gotpl", &crudResolver{
 		Field:            catalogUnlinkField(),
 		ModelPackage:     "model",
 		EntImport:        "github.com/example/internal/ent/generated",
