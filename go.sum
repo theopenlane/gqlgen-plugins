@@ -89,8 +89,8 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
-github.com/theopenlane/entx v0.38.0 h1:cGNkk5Y6eVxMQKr67KaCQCjuPj1pRcTiIgpqXlYLNB4=
-github.com/theopenlane/entx v0.38.0/go.mod h1:J3rbce3FDCMzumTu4dauH7JmNiEDbRCYXoMZr8trTSs=
+github.com/theopenlane/entx v0.38.2 h1:VeEH6S4RhRYZHxlRD/AhdvzryhMF8YDkz1nJnfgd7og=
+github.com/theopenlane/entx v0.38.2/go.mod h1:J3rbce3FDCMzumTu4dauH7JmNiEDbRCYXoMZr8trTSs=
 github.com/theopenlane/utils v0.7.4 h1:3R+Mg8rh6xwZ/2itWPOdEn0kW9ZyUygJ0pB1xWxffO0=
 github.com/theopenlane/utils v0.7.4/go.mod h1:MThjVD/86ERwVyCu5g7yZqfz+r7AO9fRvsPZUh9xpl0=
 github.com/vektah/gqlparser/v2 v2.5.64 h1:N32yM6hQ6Kd5RdjCCEJsUrbCebVoA9yLLMOIa88Mkk0=
