@@ -87,12 +87,7 @@ if err := resolveCSVReferencesForSchema(ctx, "{{ $entity }}", data); err != nil 
 	return nil, err
 }
 
-inputs := make([]*{{ $.EntPackage }}.Create{{ $entity }}Input, 0, len(data))
-for i := range data {
-	inputs = append(inputs, &data[i].Input)
-}
-
-return r.bulkCreate{{ $entity }}(ctx, inputs)
+return r.bulkCreateCSV{{ $entity }}(ctx, data)
 
 {{ else }}
 data, err := common.UnmarshalBulkData[{{ $.EntPackage }}.Create{{ $entity }}Input](input)
