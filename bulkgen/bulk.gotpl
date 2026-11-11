@@ -61,6 +61,29 @@ func (r *mutationResolver) bulkCreate{{ $object.Name }} (ctx context.Context, in
 		{{ $object.PluralName }}: res,
 	}, nil
 }
+{{- if and $object.HasCSVUpdateMutation $root.CSVGeneratedImport }}
+
+// bulkCreateCSV{{ $object.Name }} creates {{ $object.Name }} entities from CSV rows along with any child records each row names
+func (r *mutationResolver) bulkCreateCSV{{ $object.Name }} (ctx context.Context, rows []*csvgenerated.{{ $object.Name }}CSVInput) (*{{ $root.ModelPackage }}{{ $object.Name }}BulkCreatePayload, error) {
+	inputs := make([]*generated.Create{{ $object.Name }}Input, 0, len(rows))
+	for _, row := range rows {
+		inputs = append(inputs, &row.Input)
+	}
+
+	res, err := r.bulkCreate{{ $object.Name }}(ctx, inputs)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, entity := range res.{{ $object.PluralName }} {
+		if err := createCSVChildrenForRow(ctx, rows[i], entity.ID); err != nil {
+			return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionCreate, Object: "{{ $object.Name | toLower }}"})
+		}
+	}
+
+	return res, nil
+}
+{{- end }}
 {{- else if eq $object.OperationType "update" }}
 // bulkUpdate{{ $object.Name }} updates multiple {{ $object.Name }} entities
 func (r *mutationResolver) bulkUpdate{{ $object.Name }} (ctx context.Context, ids []string, input generated.Update{{ $object.Name }}Input) (*{{ $root.ModelPackage }}{{ $object.Name }}BulkUpdatePayload, error) {
@@ -165,6 +188,11 @@ func (r *mutationResolver) bulkUpdateCSV{{ $object.Name }} (ctx context.Context,
 		updatedEntity, err := existing.Update().SetInput(input.Input){{- range $appendField := $object.AppendFields }}.{{ $appendField }}(input.Input.{{ $appendField }}){{- end }}.Save(ctx)
 		if err != nil {
 			logx.FromContext(ctx).Error().Err(err).Str("{{ $object.Name | toLower }}_id", input.ID).Msg("failed to update {{ $object.Name | toLower }} in CSV bulk operation")
+			return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionUpdate, Object: "{{ $object.Name | toLower }}"})
+		}
+
+		if err := createCSVChildrenForRow(ctx, input, updatedEntity.ID); err != nil {
+			logx.FromContext(ctx).Error().Err(err).Str("{{ $object.Name | toLower }}_id", input.ID).Msg("failed to create CSV child records for {{ $object.Name | toLower }}")
 			return nil, parseRequestError(ctx, err, common.Action{Action: common.ActionUpdate, Object: "{{ $object.Name | toLower }}"})
 		}
 
